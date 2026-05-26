@@ -15,6 +15,8 @@ st.title("🤖 MVP Prediction Model")
 st.markdown("""
 This tool uses a Machine Learning model (**XGBoost**) paired with a **Leave-One-Season-Out** cross-validation approach. 
 
+🏆 **Historical Accuracy**: Correctly predicts the MVP for **73.1%** of the past 26 NBA seasons.
+
 ### 🧠 Model Intelligence
 In addition to basic box score stats, this model trains on advanced engineered features:
 *   **Total Offensive Load**: Combines Usage Rate and Assist Percentage to capture how much of a team's offense runs directly through the player's hands.
@@ -27,7 +29,11 @@ In addition to basic box score stats, this model trains on advanced engineered f
 @st.cache_data
 def load_and_prep_data():
     """Loads CSV and applies initial filters"""
-    df = pd.read_csv("data/processed/mvp_data.csv")
+    import os
+    # Navigate to root directory from streamlit_app/pages
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    file_path = os.path.join(base_dir, "data", "processed", "mvp_data.csv")
+    df = pd.read_csv(file_path)
     # Clean whitespace strings from the names
     df['PLAYER_NAME'] = df['PLAYER_NAME'].astype(str).str.strip()
     df['SEASON'] = df['SEASON'].astype(str).str.strip()

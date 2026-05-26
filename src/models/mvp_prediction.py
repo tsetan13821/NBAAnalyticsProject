@@ -55,6 +55,10 @@ def feature_engineering(df):
     # 3. Seed Ranking Proxy
     df['SEED_RANK'] = df.groupby('SEASON')['WinPCT'].rank(ascending=False, method='min')
     
+    # NEW RULE: Historically, MVPs almost exclusively come from a Top 2 Seed in their conference
+    # We create a hard flag for whether they are on an elite #1 or #2 overall WinPCT pace
+    df['IS_TOP_2_SEED'] = (df['SEED_RANK'] <= 2).astype(int)
+    
     # 4. Voter Fatigue (Did they win last year?)
     mw_dict = {
         '1999-00': 'Shaquille O\'Neal', '2000-01': 'Allen Iverson', '2001-02': 'Tim Duncan',
@@ -116,13 +120,13 @@ def test_season(df, z_features, target_season):
         # In Era 1, voters historically didn't care about PIE or OFFENSIVE_LOAD. 
         # They cared wildly about raw SEED_RANK and raw TRADITIONAL STATS.
         # We manually select and prioritize features meant for the early 2000s.
-        era_features = ['PTS_Z', 'REB_Z', 'AST_Z', 'WinPCT_Z', 'STOCKS_Z', 'SEED_RANK', 'WON_LAST_YEAR']
+        era_features = ['PTS_Z', 'REB_Z', 'AST_Z', 'WinPCT_Z', 'STOCKS_Z', 'SEED_RANK', 'IS_TOP_2_SEED', 'WON_LAST_YEAR']
     else:
         era_df = df[df['START_YEAR'] > 2007].copy()
         
         # In Era 2, voters heavily care about ADVANCED STATS and carry weight.
         # They ignore traditional stats and heavily scrutinize PIE, On/Off, and TS%.
-        era_features = ['TS_PCT_Z', 'OFFENSIVE_LOAD_Z', 'PIE_Z', 'ON_OFF_PROXY_Z', 'SEED_RANK', 'DEF_RATING_Z', 'GP_Z']
+        era_features = ['TS_PCT_Z', 'OFFENSIVE_LOAD_Z', 'PIE_Z', 'ON_OFF_PROXY_Z', 'SEED_RANK', 'IS_TOP_2_SEED', 'DEF_RATING_Z', 'GP_Z']
         
     # 1. Split Data using ONLY the Era-Specific Features
     train_data = era_df[era_df['SEASON'] != target_season].copy()
