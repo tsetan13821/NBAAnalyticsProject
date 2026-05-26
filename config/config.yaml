@@ -1,0 +1,33 @@
+data_collection:
+  start_season: "2000-01" # 2000 to current year gives a great sample size (around 450-500 players/season * 24 seasons ~ 11,000-12,000 rows)
+  end_season: "2025-26"
+  season_type: "Regular Season"
+  min_games_played: 20 # Filter out players with very few games to reduce noise
+
+features:
+  base:
+    - GP       # Games Played
+    - MIN      # Minutes Played
+    - PTS      # Points
+    - REB      # Total Rebounds (OREB + DREB)
+    - AST      # Assists
+    - STL      # Steals
+    - BLK      # Blocks
+    - TOV      # Turnovers
+  shooting:
+    - FG_PCT   # Field Goal Percentage
+    - FG3_PCT  # 3-Point Percentage
+    - FT_PCT   # Free Throw Percentage
+  advanced:
+    - TS_PCT   # True Shooting Percentage
+    - EFG_PCT  # Effective Field Goal Percentage
+    - USG_PCT  # Usage Percentage
+    - PIE      # Player Impact Estimate (NBA.com's equivalent of PER)
+    - OFF_RATING # Offensive Rating
+    - DEF_RATING # Defensive Rating
+    - NET_RATING # Net Rating
+    - AST_TO   # Assist to Turnover Ratio
+    - OREB_PCT # Offensive Rebound Percentage
+    - DREB_PCT # Defensive Rebound Percentage
+    - AST_PCT  # Assist Percentage
+    - REB_PCT  # Rebound Percentage
