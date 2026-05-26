@@ -3,9 +3,9 @@ import pandas as pd
 import altair as alt
 import os
 
-st.set_page_config(page_title="Player Clusters", page_icon="??", layout="wide")
+st.set_page_config(page_title="Player Clusters", page_icon="📊", layout="wide")
 
-st.title("?? NBA Player Clusters & Archetypes")
+st.title("📊 NBA Player Clusters & Archetypes")
 st.markdown("""
 Explore player archetypes using **K-Means Clustering**. Players are grouped by their dominant stat profile (**Scorer, Playmaker, Rebounder, Defensive**) 
 and then segmented into internal distinct tiers (**Elite, Very Good, Average**).
@@ -57,7 +57,7 @@ col4.metric("Avg Minutes (Filtered)", round(filtered_df['MIN'].mean(), 1))
 st.divider()
 
 # --- INTERACTIVE SCATTER PLOT ---
-st.markdown("### ?? Interactive Stat Explorer")
+st.markdown("### 🔍 Interactive Stat Explorer")
 st.markdown("Compare players across different metrics. The chart is colored by their Tier.")
 
 stat_cols = ['PTS', 'AST', 'REB', 'STL', 'BLK', 'USG_PCT', 'TS_PCT', 'MIN', 'PIE', 'NET_RATING']
@@ -117,7 +117,7 @@ for i, cluster in enumerate(clusters_list):
 
 # --- SIMILAR PLAYER FINDER ---
 st.divider()
-st.markdown("### ?? Find Similar Players")
+st.markdown("### 🤖 Find Similar Players")
 st.markdown("Select a player to find who plays most similarly to them based on advanced clustered metrics.")
 
 all_players = sorted(df['PLAYER_NAME'].dropna().unique())

@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="All-Star Predictions", page_icon="?", layout="wide")
+st.set_page_config(page_title="All-Star Predictions", page_icon="⭐", layout="wide")
 
-st.title("? All-Star Predictions & Rosters")
+st.title("⭐ All-Star Predictions & Rosters")
 st.markdown("""
 This tool uses our **Impact Score Model** to retroactively build optimal All-Star rosters for each season.
 The model strictly adheres to modern roster rules per conference:
