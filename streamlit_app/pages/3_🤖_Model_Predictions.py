@@ -78,9 +78,6 @@ with tab1:
                 with col2:
                     st.info(f"**🏆 Actual Real-Life MVP:** {res['ACTUAL_MVP']}")
                 
-                if res['CORRECT']:
-                    st.balloons()
-                
                 st.markdown("### Top 10 Candidates (Model Probability)")
                 
                 # Format Data for Chart
