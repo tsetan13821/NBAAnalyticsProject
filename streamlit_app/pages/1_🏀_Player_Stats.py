@@ -10,7 +10,8 @@ st.markdown("Compare players across different metrics using raw statistical perc
 
 @st.cache_data
 def load_data():
-    file_path = "data/raw/nba_player_stats.csv"
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    file_path = os.path.join(base_dir, "data", "raw", "nba_player_stats.csv")
     if not os.path.exists(file_path):
         st.error(f"Data file not found: {file_path}")
         return pd.DataFrame()
