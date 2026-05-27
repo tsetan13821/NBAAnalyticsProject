@@ -5,9 +5,9 @@ import os
 import joblib
 import altair as alt
 
-st.set_page_config(page_title="Next Game Prediction", page_icon="??", layout="wide")
+st.set_page_config(page_title="Next Game Prediction", page_icon="🔮", layout="wide")
 
-st.title("?? Next Matchup Predictor")
+st.title("🔮 Next Matchup Predictor")
 st.markdown("""
 Predict the outcome of an upcoming NBA game based on team momentum and venue strength! 
 This model relies purely on situational form (Overall Win %, Home Win %, and Road Win %) rather than historical head-to-head records.
@@ -64,10 +64,10 @@ for t in teams:
         'Away_WinPCT': away_pct
     }
 
-st.sidebar.header("Matchup Selection ??")
-home_team = st.sidebar.selectbox("Select Home Team ??", teams, index=teams.index('BOS') if 'BOS' in teams else 0)
+st.sidebar.header("Matchup Selection 🏀")
+home_team = st.sidebar.selectbox("Select Home Team 🏠", teams, index=teams.index('BOS') if 'BOS' in teams else 0)
 default_away = 'DAL' if 'DAL' in teams else teams[1]
-away_team = st.sidebar.selectbox("Select Away Team ??", teams, index=teams.index(default_away) if default_away in teams else 1)
+away_team = st.sidebar.selectbox("Select Away Team ✈️", teams, index=teams.index(default_away) if default_away in teams else 1)
 
 if home_team == away_team:
     st.error("Please select two different teams.")
@@ -87,13 +87,13 @@ away_away = st.sidebar.slider(f"{away_team} Road Win %", 0.0, 1.0, float(latest_
 col_h, col_vs, col_a = st.columns([3, 1, 3])
 
 with col_h:
-    st.markdown(f"<div style='border: 2px solid #1E90FF; padding: 20px; border-radius: 10px; background-color: rgba(30, 144, 255, 0.1);'><h1 style='text-align: center; color: #1E90FF; margin: 0;'>?? {home_team}</h1><br><p style='text-align: center; margin: 0; font-size: 1.2rem;'>Overall Form: <b>{home_overall*100:.1f}%</b><br>Home Stadium Form: <b>{home_home*100:.1f}%</b></p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='border: 2px solid #1E90FF; padding: 20px; border-radius: 10px; background-color: rgba(30, 144, 255, 0.1);'><h1 style='text-align: center; color: #1E90FF; margin: 0;'>🏠 {home_team}</h1><br><p style='text-align: center; margin: 0; font-size: 1.2rem;'>Overall Form: <b>{home_overall*100:.1f}%</b><br>Home Stadium Form: <b>{home_home*100:.1f}%</b></p></div>", unsafe_allow_html=True)
     
 with col_vs:
     st.markdown("<br><h1 style='text-align: center; color: #888; font-size: 3rem;'>VS</h1>", unsafe_allow_html=True)
 
 with col_a:
-    st.markdown(f"<div style='border: 2px solid #FF4500; padding: 20px; border-radius: 10px; background-color: rgba(255, 69, 0, 0.1);'><h1 style='text-align: center; color: #FF4500; margin: 0;'>?? {away_team}</h1><br><p style='text-align: center; margin: 0; font-size: 1.2rem;'>Overall Form: <b>{away_overall*100:.1f}%</b><br>Away Form: <b>{away_away*100:.1f}%</b></p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='border: 2px solid #FF4500; padding: 20px; border-radius: 10px; background-color: rgba(255, 69, 0, 0.1);'><h1 style='text-align: center; color: #FF4500; margin: 0;'>✈️ {away_team}</h1><br><p style='text-align: center; margin: 0; font-size: 1.2rem;'>Overall Form: <b>{away_overall*100:.1f}%</b><br>Away Form: <b>{away_away*100:.1f}%</b></p></div>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -110,10 +110,10 @@ features = pd.DataFrame([{
 # PREDICTION
 col_pred_btn, col_blank, col_blank2 = st.columns([1, 1, 1])
 with col_pred_btn:
-    predict_clicked = st.button("? INITIALIZE PREDICTION", use_container_width=True, type="primary")
+    predict_clicked = st.button("⚡ INITIALIZE PREDICTION", use_container_width=True, type="primary")
 
 if predict_clicked:
-    st.markdown("### ?? Prediction Result")
+    st.markdown("### 🎯 Prediction Result")
     probabilities = model.predict_proba(features)[0]
     home_prob = probabilities[1]
     away_prob = probabilities[0]
@@ -142,7 +142,7 @@ if predict_clicked:
 st.divider()
 
 # Historical momentum line chart
-st.markdown(f"### ?? Momentum Tracking Over Recent Seasons")
+st.markdown(f"### 📈 Momentum Tracking Over Recent Seasons")
 st.markdown("How has each team's overall win percentage trended? (*Shows running win percentage over all historical games in dataset*)")
 
 # Gather momentum for both teams
