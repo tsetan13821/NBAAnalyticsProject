@@ -1,5 +1,4 @@
 pandas
-pandas-ta
 scikit-learn
 scipy
 numpy
@@ -12,3 +11,8 @@ xlrd
 lxml
 plotly
 statsmodels
+streamlit
+altair
+xgboost
+joblib
+nba_api
