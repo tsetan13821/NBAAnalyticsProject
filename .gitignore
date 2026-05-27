@@ -1,8 +1,8 @@
-data/raw/*
+# data/raw/*
 !data/raw/.gitkeep
-data/processed/*
+# data/processed/*
 !data/processed/.gitkeep
-saved_models/*
+# saved_models/*
 !saved_models/.gitkeep
 .env
 __pycache__/
