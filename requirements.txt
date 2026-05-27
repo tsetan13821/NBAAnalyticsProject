@@ -10,3 +10,5 @@ tqdm
 openpyxl
 xlrd
 lxml
+plotly
+statsmodels
