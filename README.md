@@ -1,59 +1,63 @@
-# ?? NBA Analytics Project
+# 🏀 NBA Analytics & Machine Learning Dashboard
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat&logo=python)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red?style=flat&logo=streamlit)
-![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Scikit--learn-orange)
+![XGBoost](https://img.shields.io/badge/Machine%20Learning-XGBoost-orange)
+![Scikit-Learn](https://img.shields.io/badge/Clustering-K--Means-green)
 
-An end-to-end data science and machine learning project focused on NBA player statistics, awards predictions, and player profiling. 
+An end-to-end data science and machine learning platform focused on NBA player statistics, predictive awards forecasting, player playstyle clustering, and game outcome modeling.
 
-## ?? Features
+> 📖 **Complete Documentation**: For an in-depth walkthrough of the data collection API endpoints, feature engineering math, era normalization rules, and machine learning architectures, see [PROJECT_DOCUMENTATION.md](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/PROJECT_DOCUMENTATION.md).
 
-- **Automated Data Pipeline**: Fetches, cleans, and processes raw NBA player stats to dynamically build datasets (e.g., MVP data).
+---
+
+## ✨ Features
+
+- **Automated Data Pipeline**: Ingests, cleans, and processes raw multi-season NBA statistics via official API wrappers (`Base` and `Advanced` endpoints).
 - **Machine Learning Models**:
-  - **MVP Prediction**: Rolling and static MVP prediction models achieving **73.1% historical accuracy** over the last 26 seasons.
-  - **All-Star Prediction**: Predicts likelihood of players being selected as All-Stars.
-  - **Next Game Prediction**: Forecasts player performance for upcoming games.
-  - **Player Clustering**: Unsupervised learning models to group players by playstyles.
-- **Interactive Dashboard**: A multi-page Streamlit application with the following tools:
-  - ?? Player Stats Analysis
-  - ?? Team Insights
-  - ?? Model Predictions
-  - ?? Player Clusters
-- **Exploratory Data Analysis (EDA)**: Jupyter notebooks containing comprehensive EDA and model testing.
+  - **MVP Prediction**: XGBoost model using Leave-One-Season-Out Cross Validation (LOOCV), achieving **73.1% historical accuracy** over the past 26 seasons.
+  - **All-Star Prediction**: Position-constrained impact scoring model predicting Eastern and Western conference selections.
+  - **Player Archetype Clustering**: Unsupervised composite scoring and 1D K-Means clustering to classify players by playstyle (`Scorer`, `Playmaker`, `Rebounder`, `Defensive Player`) and performance tiers (`Elite`, `Very Good`, `Average`).
+  - **Next Game Prediction**: XGBoost game outcome forecast based on team momentum and home/away differentials.
+- **Interactive Streamlit Dashboard**: Full visual analytics web application featuring player lookups, team efficiency quadrant charts, live MVP model prediction runners, and clustering visualizations.
 
-## ?? Project Structure
+---
 
-`	ext
+## 📁 Repository Structure
+
+```
 NBAAnalyticsProject/
-+-- config/                 # Configuration files (config.yaml)
-+-- data/
-�   +-- processed/          # Cleaned, ready-to-use data (mvp_data.csv)
-�   +-- raw/                # Raw ingested data (nba_player_stats.csv)
-+-- notebooks/              # Jupyter Notebooks for EDA and Model Testing
-+-- saved_models/           # Serialized/Exported ML models
-+-- src/                    # Source code for data pipelines and models
-�   +-- data_pipeline/      # Scripts to fetch, clean, and build datasets
-�   +-- models/             # ML model implementations and training scripts
-+-- streamlit_app/          # Streamlit UI
-�   +-- pages/              # Specific dashboard pages
-�   +-- utils/              # UI helper functions and visualization scripts
-+-- tests/                  # Unit tests for pipelines and models
-+-- pyproject.toml          # Project metadata and dependencies
-+-- requirements.txt        # Python dependencies
-+-- README.md               # Project documentation
-`
+├── config/                 # Pipeline configuration files (config.yaml)
+├── data/
+│   ├── processed/          # Cleaned datasets (mvp_data.csv, all_stars_master.csv, etc.)
+│   └── raw/                # Ingested raw player statistics (nba_player_stats.csv)
+├── notebooks/              # Jupyter Notebooks for EDA and prototype testing
+├── saved_models/           # Serialized machine learning models (.pkl)
+├── src/
+│   ├── data_collection.py  # Script to ingest multi-season stats from NBA API
+│   ├── data_pipeline/      # Data pipeline scripts (standings fetch, MVP dataset build)
+│   └── models/             # Machine learning implementations (MVP, All-Star, Clustering, Next Game)
+├── streamlit_app/          # Streamlit UI dashboard
+│   ├── app.py              # Main dashboard entrypoint
+│   └── pages/              # Dashboard pages (Player Stats, Clusters, Model Predictions)
+├── PROJECT_DOCUMENTATION.md # Detailed technical breakdown & architectural guide
+├── pyproject.toml          # Project metadata and dependencies
+├── requirements.txt        # Python dependencies
+└── README.md               # Project overview
+```
 
-## ?? Getting Started
+---
 
-### 1. Clone the repository
-`ash
+## 🚀 Quick Start Guide
+
+### 1. Clone the Repository
+```bash
 git clone https://github.com/tsetan13821/NBAAnalyticsProject.git
 cd NBAAnalyticsProject
-`
+```
 
-### 2. Set up the environment
-Create a virtual environment and install dependencies:
-`ash
+### 2. Set Up Virtual Environment & Dependencies
+```bash
 python -m venv venv
 # On Windows
 venv\Scripts\activate
@@ -61,29 +65,31 @@ venv\Scripts\activate
 source venv/bin/activate
 
 pip install -r requirements.txt
-`
+```
 
-### 3. Run the Data Pipeline (Optional)
-If you wish to re-fetch and process the data:
-`ash
-python src/data_pipeline/raw_data_fetch.py
-python src/data_pipeline/clean_data.py
+### 3. Run Pipelines & ML Models
+```bash
+# Data Collection from NBA API
+python src/data_collection.py
+
+# Build MVP Dataset with Team Standings
 python src/data_pipeline/build_mvp_dataset.py
-`
 
-### 4. Launch the Streamlit App
-`ash
+# Evaluate MVP XGBoost Model via LOOCV
+python src/models/mvp_prediction.py
+
+# Run Player Archetype Clustering Pipeline
+python src/models/player_clustering.py
+```
+
+### 4. Launch Streamlit Web Application
+```bash
 cd streamlit_app
 streamlit run app.py
-`
+```
 
-## ?? Testing
+---
 
-To run the unit tests for the data pipeline and machine learning models:
-`ash
-pytest tests/
-`
+## 📜 License
 
-## ?? License
-
-This project is open-sourced under the terms of the included LICENSE file.
+This project is open-sourced under the terms of the included [LICENSE](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/LICENSE) file.
