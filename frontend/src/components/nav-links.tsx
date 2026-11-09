@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/mvp", label: "MVP Race", short: "MVP" },
   { href: "/players", label: "Players" },
   { href: "/compare", label: "Compare" },
+  { href: "/games", label: "Games" },
 ] as const;
 
 /** The link whose section contains the path; the most specific wins if sections ever nest. */

@@ -26,7 +26,16 @@ const CONTENTS: { title: string; description: string; href?: string }[] = [
     description: "Every player since 2000: season-by-season numbers, career arc and the most similar players.",
     href: "/players",
   },
-  { title: "Game predictor", description: "Win probability for any matchup from each team's record." },
+  {
+    title: "Game predictor",
+    description: "Every game this week: each team's chance, the predicted margin, and who the injury report says may miss it.",
+    href: "/games",
+  },
+  {
+    title: "How the game predictor works",
+    description: "Team strength, player value, the injury report, and how the model was tested on unseen seasons.",
+    href: "/games/method",
+  },
   { title: "Franchises", description: "Records, rosters and championships for all 30 teams." },
 ];
 
@@ -60,7 +69,15 @@ export default function HomePage() {
       </Section>
 
       <Section>
-        <SectionHeading number="02" title="The game model" />
+        <SectionHeading
+          number="02"
+          title="The game model"
+          aside={
+            <Link href="/games" className="eyebrow inline-flex items-center gap-1.5 text-brand hover:underline">
+              This week&apos;s games <ArrowRightIcon className="size-3.5" />
+            </Link>
+          }
+        />
         <Suspense fallback={<Skeleton className="h-28 w-full" />}>
           <GameModel />
         </Suspense>
@@ -123,21 +140,28 @@ async function MvpRecord() {
 
 async function GameModel() {
   const meta = await getMeta();
-  const model = meta.next_game_model;
+  const model = meta.game_model;
+  const live = meta.game_season;
   return (
     <>
       <FigureRow>
         <Figure label="Model" value={percent(model.accuracy)} tone="brand" />
-        <Figure label="Always pick the home team" value={percent(model.home_baseline)} />
+        <Figure label="Elo ratings alone" value={percent(model.elo_baseline)} />
         <Figure label="Pick the better record" value={percent(model.record_baseline)} />
+        <Figure label="Always pick the home team" value={percent(model.home_baseline)} />
       </FigureRow>
       <p className="mt-4 max-w-2xl font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
         Trained on {model.train_games.toLocaleString("en-US")} games from {model.train_first_season} to{" "}
-        {model.train_last_season}, then tested on {model.test_games.toLocaleString("en-US")} games from{" "}
-        {model.test_season} that it never saw, using only each team&apos;s record before tip-off. (Games count once
-        both teams have played ten, because earlier records are too noisy.) The model clearly beats &ldquo;home team
-        wins&rdquo; but falls just short of simply backing the team with the better record, an honest sign of how
-        much a record alone can tell you.
+        {model.train_last_season}, then tested on all {model.test_games.toLocaleString("en-US")} games of{" "}
+        {model.test_season}, which it never saw. It weighs team strength, form, rest and travel, and the official
+        injury report, with each player counted by what he is worth to his team: a star ruled out moves the line, a
+        deep reserve does not.
+        {live && live.games_played > 0 && (
+          <>
+            {" "}
+            So far in {live.season} it has called {ratio(live.correct, live.games_played)} winners.
+          </>
+        )}
       </p>
     </>
   );

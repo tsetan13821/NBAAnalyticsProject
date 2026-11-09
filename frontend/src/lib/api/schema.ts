@@ -4,17 +4,68 @@
  */
 
 export interface paths {
-    "/api/v1/games/predict": {
+    "/api/v1/games/model": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** The game model's inputs and evaluation */
+        get: operations["game_model_api_v1_games_model_get"];
         put?: never;
-        /** Predict a game's winner */
-        post: operations["predict_game_api_v1_games_predict_post"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** This season's games, as predicted beforehand */
+        get: operations["game_results_api_v1_games_results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Predictions for the coming week */
+        get: operations["upcoming_games_api_v1_games_upcoming_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games/{game_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One game: prediction, why, and who is available */
+        get: operations["get_game_api_v1_games__game_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -246,6 +297,92 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AblationStep */
+        AblationStep: {
+            /** Accuracy */
+            accuracy: number;
+            /** Added */
+            added: string;
+            /** Brier */
+            brier: number;
+            /** Log Loss */
+            log_loss: number;
+        };
+        /** Absence */
+        Absence: {
+            /**
+             * Already Missing
+             * @description He has missed most of the team's last ten games, so the team's recent results already reflect his absence and it barely moves the prediction
+             */
+            already_missing: boolean;
+            /** Name */
+            name: string;
+            /** Player Id */
+            player_id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "Out" | "Doubtful" | "Questionable" | "Probable" | "Available";
+            /** Team Abbr */
+            team_abbr: string;
+            /**
+             * Value Lost
+             * @description Player value (points of Game Score) the team expects to be without
+             */
+            value_lost: number;
+        };
+        /** Baselines */
+        Baselines: {
+            /**
+             * Better Record
+             * @description Accuracy of picking the team with the better record so far
+             */
+            better_record: number;
+            elo: components["schemas"]["Scores"];
+            /**
+             * Home Team
+             * @description Accuracy of always picking the home team
+             */
+            home_team: number;
+        };
+        /** BreakdownItem */
+        BreakdownItem: {
+            /**
+             * Key
+             * @example availability
+             */
+            key: string;
+            /**
+             * Label
+             * @example Tonight's availability
+             */
+            label: string;
+            /**
+             * Points
+             * @description Points this group adds to the home team's margin
+             */
+            points: number;
+        };
+        /** CalibrationBin */
+        CalibrationBin: {
+            /**
+             * Actual
+             * @description Share of these games the favourite won
+             */
+            actual: number;
+            /** Games */
+            games: number;
+            /** High */
+            high: number;
+            /**
+             * Low
+             * @description The favourite's predicted chance, from
+             */
+            low: number;
+            /** Predicted */
+            predicted: number;
+        };
         /** CandidateStats */
         CandidateStats: {
             /** Ast Pg */
@@ -301,6 +438,25 @@ export interface components {
             /** Team Abbr */
             team_abbr: string;
         };
+        /** ConfidenceBin */
+        ConfidenceBin: {
+            /** Favorite Won */
+            favorite_won: number;
+            /** Games */
+            games: number;
+            /** High */
+            high: number;
+            /**
+             * Low
+             * @description The favourite's predicted chance, from
+             */
+            low: number;
+            /**
+             * Predicted
+             * @description Average predicted chance of the favourite
+             */
+            predicted: number;
+        };
         /** EraAccuracy */
         EraAccuracy: {
             /** Correct */
@@ -320,6 +476,53 @@ export interface components {
              */
             detail: string;
         };
+        /** Evaluation */
+        Evaluation: {
+            /**
+             * Ablation
+             * @description Input groups added one at a time
+             */
+            ablation: components["schemas"]["AblationStep"][];
+            baselines: components["schemas"]["Baselines"];
+            /** Calibration */
+            calibration: components["schemas"]["CalibrationBin"][];
+            held_out: components["schemas"]["HeldOut"];
+            /**
+             * Models
+             * @description Alternatives scored on the same games
+             */
+            models: {
+                [key: string]: components["schemas"]["Scores"];
+            };
+            /** Test Games */
+            test_games: number;
+            /** Test Season */
+            test_season: string;
+            /** Train First Season */
+            train_first_season: string;
+            /** Train Games */
+            train_games: number;
+            /** Train Last Season */
+            train_last_season: string;
+            /** Walk Forward */
+            walk_forward: components["schemas"]["WalkForwardSeason"][];
+        };
+        /** FeatureInfo */
+        FeatureInfo: {
+            /**
+             * Coefficient
+             * @description Points of margin per unit
+             */
+            coefficient: number;
+            /** Description */
+            description: string;
+            /** Group */
+            group: string;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+        };
         /** FormGame */
         FormGame: {
             /** Date */
@@ -332,6 +535,255 @@ export interface components {
             win_pct: number;
             /** Won */
             won: boolean;
+        };
+        /** GameDetail */
+        GameDetail: {
+            away: components["schemas"]["TeamSide"];
+            /** Away Players */
+            away_players: components["schemas"]["GamePlayer"][];
+            /**
+             * Breakdown
+             * @description Sums to predicted_margin
+             */
+            breakdown: components["schemas"]["BreakdownItem"][];
+            /**
+             * Date
+             * @description ISO date, US Eastern
+             */
+            date: string;
+            /** Favorite */
+            favorite: string;
+            /** Game Id */
+            game_id: string;
+            home: components["schemas"]["TeamSide"];
+            /**
+             * Home Players
+             * @description Most valuable first
+             */
+            home_players: components["schemas"]["GamePlayer"][];
+            /** Home Win Probability */
+            home_win_probability: number;
+            /**
+             * Key Absences
+             * @description Players listed Out, Doubtful or Questionable who are worth the most to their team, at most four
+             */
+            key_absences: components["schemas"]["Absence"][];
+            /**
+             * Predicted Margin
+             * @description Home team's predicted margin; negative favours the away team
+             */
+            predicted_margin: number;
+            /** @description Final score, once played */
+            result: components["schemas"]["GameResult"] | null;
+            /** Season */
+            season: string;
+            /**
+             * Spread
+             * @description Standard deviation of the real margin around the prediction
+             */
+            spread: number;
+            /**
+             * Tip Et
+             * @description Tip-off, 'HH:MM' Eastern (upcoming games)
+             */
+            tip_et: string | null;
+            what_if: components["schemas"]["WhatIf"] | null;
+        };
+        /** GameModelDetails */
+        GameModelDetails: {
+            evaluation: components["schemas"]["Evaluation"];
+            /** Features */
+            features: components["schemas"]["FeatureInfo"][];
+            /**
+             * Intercept
+             * @description Home edge with a normal crowd, points
+             */
+            intercept: number;
+            /**
+             * Play Rates
+             * @description Share of listed players who played, by status
+             */
+            play_rates: {
+                [key: string]: number;
+            };
+            /** Spread */
+            spread: number;
+            /**
+             * Trained On
+             * @example 2019-20 to 2025-26
+             */
+            trained_on: string;
+        };
+        /** GameModelInfo */
+        GameModelInfo: {
+            /** Accuracy */
+            accuracy: number;
+            /**
+             * Elo Baseline
+             * @description Accuracy of Elo ratings alone
+             */
+            elo_baseline: number;
+            /**
+             * Home Baseline
+             * @description Accuracy of always picking the home team
+             */
+            home_baseline: number;
+            /** Log Loss */
+            log_loss: number;
+            /**
+             * Record Baseline
+             * @description Accuracy of picking the team with the better record
+             */
+            record_baseline: number;
+            /** Test Games */
+            test_games: number;
+            /**
+             * Test Season
+             * @description Held out: the model never saw these games while training
+             */
+            test_season: string;
+            /** Train First Season */
+            train_first_season: string;
+            /** Train Games */
+            train_games: number;
+            /** Train Last Season */
+            train_last_season: string;
+        };
+        /** GamePlayer */
+        GamePlayer: {
+            /**
+             * Chance
+             * @description Chance of playing the prediction uses (after any what-if)
+             */
+            chance: number;
+            /** Expected Minutes */
+            expected_minutes: number;
+            /** Headshot Url */
+            headshot_url: string;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Participation
+             * @description Share of the team's last ten games he played
+             */
+            participation: number;
+            /**
+             * Played
+             * @description Whether he played, once the game is over
+             */
+            played: boolean | null;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Status
+             * @description Injury report status; NULL when not listed
+             */
+            status: ("Out" | "Doubtful" | "Questionable" | "Probable" | "Available") | null;
+            /**
+             * Status Source
+             * @description 'carried': no report covers this game yet, so his latest status is carried forward
+             */
+            status_source: ("report" | "carried") | null;
+            /** Team Abbr */
+            team_abbr: string;
+            /**
+             * Value
+             * @description Game Score above a replacement player at his usual minutes
+             */
+            value: number;
+            /**
+             * What If
+             * @description Set when this request changed his chance
+             */
+            what_if: ("out" | "in") | null;
+        };
+        /** GameResult */
+        GameResult: {
+            /** Away Pts */
+            away_pts: number;
+            /**
+             * Correct
+             * @description The model's favourite won
+             */
+            correct: boolean;
+            /** Home Pts */
+            home_pts: number;
+            /**
+             * Winner
+             * @example BOS
+             */
+            winner: string;
+        };
+        /** GameResults */
+        GameResults: {
+            /** Items */
+            items: components["schemas"]["GameSummary"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            record: components["schemas"]["TrackRecord"];
+            /**
+             * Total
+             * @description Total matching items, ignoring limit/offset
+             */
+            total: number;
+        };
+        /** GameSeasonInfo */
+        GameSeasonInfo: {
+            /**
+             * As Of
+             * @description When the predictions were made (ISO, Eastern)
+             */
+            as_of: string;
+            /**
+             * Correct
+             * @description Played games whose favourite won
+             */
+            correct: number;
+            /** Games Played */
+            games_played: number;
+            /** Season */
+            season: string;
+            /** Upcoming Games */
+            upcoming_games: number;
+        };
+        /** GameSummary */
+        GameSummary: {
+            away: components["schemas"]["TeamSide"];
+            /**
+             * Date
+             * @description ISO date, US Eastern
+             */
+            date: string;
+            /** Favorite */
+            favorite: string;
+            /** Game Id */
+            game_id: string;
+            home: components["schemas"]["TeamSide"];
+            /** Home Win Probability */
+            home_win_probability: number;
+            /**
+             * Key Absences
+             * @description Players listed Out, Doubtful or Questionable who are worth the most to their team, at most four
+             */
+            key_absences: components["schemas"]["Absence"][];
+            /**
+             * Predicted Margin
+             * @description Home team's predicted margin; negative favours the away team
+             */
+            predicted_margin: number;
+            /** @description Final score, once played */
+            result: components["schemas"]["GameResult"] | null;
+            /** Season */
+            season: string;
+            /**
+             * Tip Et
+             * @description Tip-off, 'HH:MM' Eastern (upcoming games)
+             */
+            tip_et: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -350,6 +802,20 @@ export interface components {
              */
             status: "ok";
         };
+        /** HeldOut */
+        HeldOut: {
+            /** Accuracy */
+            accuracy: number;
+            /** Brier */
+            brier: number;
+            /** Log Loss */
+            log_loss: number;
+            /**
+             * Margin Mae
+             * @description Mean absolute error of the predicted margin, points
+             */
+            margin_mae: number;
+        };
         /** Meta */
         Meta: {
             /** Built At */
@@ -366,10 +832,12 @@ export interface components {
             current_season_as_of: string | null;
             /** First Season */
             first_season: string;
+            game_model: components["schemas"]["GameModelInfo"];
+            /** @description The game model on the season in progress */
+            game_season: components["schemas"]["GameSeasonInfo"] | null;
             /** Last Season */
             last_season: string;
             mvp_model: components["schemas"]["MvpModelInfo"];
-            next_game_model: components["schemas"]["NextGameModelInfo"];
             /**
              * Rosters As Of
              * @description Date (YYYY-MM-DD) the current-team data was taken from NBA.com rosters
@@ -476,34 +944,6 @@ export interface components {
             predicted: components["schemas"]["PlayerRef"];
             /** Season */
             season: string;
-        };
-        /** NextGameModelInfo */
-        NextGameModelInfo: {
-            /** Accuracy */
-            accuracy: number;
-            /**
-             * Home Baseline
-             * @description Accuracy of always picking the home team
-             */
-            home_baseline: number;
-            /**
-             * Record Baseline
-             * @description Accuracy of picking the team with the better record
-             */
-            record_baseline: number;
-            /** Test Games */
-            test_games: number;
-            /**
-             * Test Season
-             * @description Held out: the model never saw these games while training
-             */
-            test_season: string;
-            /** Train First Season */
-            train_first_season: string;
-            /** Train Games */
-            train_games: number;
-            /** Train Last Season */
-            train_last_season: string;
         };
         /** Page[PlayerSummary] */
         Page_PlayerSummary_: {
@@ -700,58 +1140,6 @@ export interface components {
              */
             position_group: "G" | "F" | "C";
         };
-        /** Prediction */
-        Prediction: {
-            away_team: components["schemas"]["TeamRef"];
-            /** Away Win Probability */
-            away_win_probability: number;
-            /** Favorite */
-            favorite: string;
-            home_team: components["schemas"]["TeamRef"];
-            /** Home Win Probability */
-            home_win_probability: number;
-            inputs: components["schemas"]["PredictionInputs"];
-        };
-        /** PredictionInputs */
-        PredictionInputs: {
-            /** Away Road Win Pct */
-            away_road_win_pct: number;
-            /** Away Win Pct */
-            away_win_pct: number;
-            /**
-             * Defaults From Season
-             * @description Season whose final records filled any omitted inputs
-             */
-            defaults_from_season: string;
-            /** Home Home Win Pct */
-            home_home_win_pct: number;
-            /** Home Win Pct */
-            home_win_pct: number;
-        };
-        /**
-         * PredictionRequest
-         * @description Predict a game. Any win % left out defaults to the team's record in the latest season.
-         */
-        PredictionRequest: {
-            /** Away Road Win Pct */
-            away_road_win_pct?: number | null;
-            /**
-             * Away Team
-             * @example DAL
-             */
-            away_team: string;
-            /** Away Win Pct */
-            away_win_pct?: number | null;
-            /** Home Home Win Pct */
-            home_home_win_pct?: number | null;
-            /**
-             * Home Team
-             * @example BOS
-             */
-            home_team: string;
-            /** Home Win Pct */
-            home_win_pct?: number | null;
-        };
         /** Roster */
         Roster: {
             /** Players */
@@ -779,6 +1167,15 @@ export interface components {
             tier: ("Elite" | "Very Good" | "Average") | null;
             /** Ts Pct */
             ts_pct: number;
+        };
+        /** Scores */
+        Scores: {
+            /** Accuracy */
+            accuracy: number;
+            /** Brier */
+            brier: number;
+            /** Log Loss */
+            log_loss: number;
         };
         /** SeasonInfo */
         SeasonInfo: {
@@ -960,6 +1357,22 @@ export interface components {
             /** Wins */
             wins: number;
         };
+        /** TeamSide */
+        TeamSide: {
+            /**
+             * Elo
+             * @description Elo rating before the game (league average 1500)
+             */
+            elo: number;
+            /** Losses */
+            losses: number;
+            team: components["schemas"]["TeamRef"];
+            /**
+             * Wins
+             * @description Record before the game
+             */
+            wins: number;
+        };
         /** TeamSummary */
         TeamSummary: {
             /**
@@ -992,6 +1405,45 @@ export interface components {
             /** Secondary Color */
             secondary_color: string;
         };
+        /** TrackRecord */
+        TrackRecord: {
+            /** Accuracy */
+            accuracy: number | null;
+            /** Brier */
+            brier: number | null;
+            /** By Confidence */
+            by_confidence: components["schemas"]["ConfidenceBin"][];
+            /** Correct */
+            correct: number;
+            /** Games */
+            games: number;
+            /**
+             * Home Team Won
+             * @description Share of games the home team won (a baseline)
+             */
+            home_team_won: number | null;
+            /** Log Loss */
+            log_loss: number | null;
+            /** Season */
+            season: string | null;
+        };
+        /** UpcomingGames */
+        UpcomingGames: {
+            /**
+             * As Of
+             * @description When the predictions were made (ISO, Eastern)
+             */
+            as_of: string | null;
+            /** Games */
+            games: components["schemas"]["GameSummary"][];
+            /**
+             * Injury Report
+             * @description Time of the injury report they use (ISO, Eastern)
+             */
+            injury_report: string | null;
+            /** Season */
+            season: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1005,6 +1457,36 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WalkForwardSeason */
+        WalkForwardSeason: {
+            /** Accuracy */
+            accuracy: number;
+            baselines: components["schemas"]["Baselines"];
+            /** Brier */
+            brier: number;
+            /** Log Loss */
+            log_loss: number;
+            /** Season */
+            season: string;
+            /** Test Games */
+            test_games: number;
+            /** Train Games */
+            train_games: number;
+        };
+        /** WhatIf */
+        WhatIf: {
+            /**
+             * Base Home Win Probability
+             * @description Before the changes
+             */
+            base_home_win_probability: number;
+            /** Base Predicted Margin */
+            base_predicted_margin: number;
+            /** In */
+            in: number[];
+            /** Out */
+            out: number[];
+        };
     };
     responses: never;
     parameters: never;
@@ -1014,18 +1496,14 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    predict_game_api_v1_games_predict_post: {
+    game_model_api_v1_games_model_get: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PredictionRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1033,7 +1511,97 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Prediction"];
+                    "application/json": components["schemas"]["GameModelDetails"];
+                };
+            };
+        };
+    };
+    game_results_api_v1_games_results_get: {
+        parameters: {
+            query?: {
+                /** @description Only this team's games */
+                team?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameResults"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upcoming_games_api_v1_games_upcoming_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingGames"];
+                };
+            };
+        };
+    };
+    get_game_api_v1_games__game_id__get: {
+        parameters: {
+            query?: {
+                /** @description What if these players sit out (repeat the parameter) */
+                out?: number[] | null;
+                /** @description What if these players play (repeat the parameter) */
+                in?: number[] | null;
+            };
+            header?: never;
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameDetail"];
+                };
+            };
+            /** @description Impossible request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Not found */
