@@ -1,0 +1,5 @@
+# Runtime dependencies for the API only. The pipeline's heavy libraries (pandas, scikit-learn,
+# xgboost) are deliberately NOT needed here: the API reads a prebuilt SQLite file and a JSON model.
+fastapi==0.162.2
+pydantic==2.14.3
+uvicorn==0.54.0

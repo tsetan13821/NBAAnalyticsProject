@@ -1,0 +1,4 @@
+-r requirements.txt
+httpx2==2.16.0  # HTTP client used by the FastAPI TestClient
+pytest==9.0.3
+ruff==0.17.4
