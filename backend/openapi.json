@@ -1,0 +1,2737 @@
+{
+  "components": {
+    "schemas": {
+      "CandidateStats": {
+        "properties": {
+          "ast_pg": {
+            "title": "Ast Pg",
+            "type": "number"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "pie": {
+            "title": "Pie",
+            "type": "number"
+          },
+          "pts_pg": {
+            "title": "Pts Pg",
+            "type": "number"
+          },
+          "reb_pg": {
+            "title": "Reb Pg",
+            "type": "number"
+          },
+          "ts_pct": {
+            "title": "Ts Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "games",
+          "pts_pg",
+          "reb_pg",
+          "ast_pg",
+          "ts_pct",
+          "pie"
+        ],
+        "title": "CandidateStats",
+        "type": "object"
+      },
+      "CareerAverages": {
+        "properties": {
+          "ast_pg": {
+            "title": "Ast Pg",
+            "type": "number"
+          },
+          "blk_pg": {
+            "title": "Blk Pg",
+            "type": "number"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "min_pg": {
+            "title": "Min Pg",
+            "type": "number"
+          },
+          "pts_pg": {
+            "title": "Pts Pg",
+            "type": "number"
+          },
+          "reb_pg": {
+            "title": "Reb Pg",
+            "type": "number"
+          },
+          "stl_pg": {
+            "title": "Stl Pg",
+            "type": "number"
+          }
+        },
+        "required": [
+          "games",
+          "min_pg",
+          "pts_pg",
+          "reb_pg",
+          "ast_pg",
+          "stl_pg",
+          "blk_pg"
+        ],
+        "title": "CareerAverages",
+        "type": "object"
+      },
+      "ComparedPlayer": {
+        "properties": {
+          "peer_group": {
+            "description": "Group the percentiles are relative to",
+            "enum": [
+              "ALL",
+              "G",
+              "F",
+              "C"
+            ],
+            "title": "Peer Group",
+            "type": "string"
+          },
+          "percentiles": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "0-100; higher is always better (turnovers and defensive rating are inverted)",
+            "propertyNames": {
+              "enum": [
+                "min_pg",
+                "pts_pg",
+                "reb_pg",
+                "ast_pg",
+                "stl_pg",
+                "blk_pg",
+                "tov_pg",
+                "fg_pct",
+                "fg3_pct",
+                "ft_pct",
+                "ts_pct",
+                "efg_pct",
+                "usg_pct",
+                "pie",
+                "off_rating",
+                "def_rating",
+                "net_rating",
+                "ast_to",
+                "oreb_pct",
+                "dreb_pct",
+                "ast_pct",
+                "reb_pct"
+              ]
+            },
+            "title": "Percentiles",
+            "type": "object"
+          },
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "stats": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "propertyNames": {
+              "enum": [
+                "min_pg",
+                "pts_pg",
+                "reb_pg",
+                "ast_pg",
+                "stl_pg",
+                "blk_pg",
+                "tov_pg",
+                "fg_pct",
+                "fg3_pct",
+                "ft_pct",
+                "ts_pct",
+                "efg_pct",
+                "usg_pct",
+                "pie",
+                "off_rating",
+                "def_rating",
+                "net_rating",
+                "ast_to",
+                "oreb_pct",
+                "dreb_pct",
+                "ast_pct",
+                "reb_pct"
+              ]
+            },
+            "title": "Stats",
+            "type": "object"
+          },
+          "team_abbr": {
+            "title": "Team Abbr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "player",
+          "team_abbr",
+          "peer_group",
+          "stats",
+          "percentiles"
+        ],
+        "title": "ComparedPlayer",
+        "type": "object"
+      },
+      "EraAccuracy": {
+        "properties": {
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "era": {
+            "title": "Era",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "seasons": {
+            "title": "Seasons",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "era",
+          "label",
+          "seasons",
+          "correct"
+        ],
+        "title": "EraAccuracy",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "detail": {
+            "examples": [
+              "Player 123 not found"
+            ],
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FormGame": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "is_home": {
+            "title": "Is Home",
+            "type": "boolean"
+          },
+          "opponent_abbr": {
+            "title": "Opponent Abbr",
+            "type": "string"
+          },
+          "win_pct": {
+            "title": "Win Pct",
+            "type": "number"
+          },
+          "won": {
+            "title": "Won",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "date",
+          "opponent_abbr",
+          "is_home",
+          "won",
+          "win_pct"
+        ],
+        "title": "FormGame",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "built_at": {
+            "title": "Built At",
+            "type": "string"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "schema_version",
+          "built_at"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "Meta": {
+        "properties": {
+          "built_at": {
+            "title": "Built At",
+            "type": "string"
+          },
+          "first_season": {
+            "title": "First Season",
+            "type": "string"
+          },
+          "last_season": {
+            "title": "Last Season",
+            "type": "string"
+          },
+          "mvp_model": {
+            "$ref": "#/components/schemas/MvpModelInfo"
+          },
+          "next_game_model": {
+            "$ref": "#/components/schemas/NextGameModelInfo"
+          }
+        },
+        "required": [
+          "first_season",
+          "last_season",
+          "built_at",
+          "mvp_model",
+          "next_game_model"
+        ],
+        "title": "Meta",
+        "type": "object"
+      },
+      "MetricInfo": {
+        "properties": {
+          "format": {
+            "enum": [
+              "per_game",
+              "percent",
+              "rating",
+              "ratio"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "higher_is_better": {
+            "title": "Higher Is Better",
+            "type": "boolean"
+          },
+          "key": {
+            "enum": [
+              "min_pg",
+              "pts_pg",
+              "reb_pg",
+              "ast_pg",
+              "stl_pg",
+              "blk_pg",
+              "tov_pg",
+              "fg_pct",
+              "fg3_pct",
+              "ft_pct",
+              "ts_pct",
+              "efg_pct",
+              "usg_pct",
+              "pie",
+              "off_rating",
+              "def_rating",
+              "net_rating",
+              "ast_to",
+              "oreb_pct",
+              "dreb_pct",
+              "ast_pct",
+              "reb_pct"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "examples": [
+              "Points"
+            ],
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "format",
+          "higher_is_better"
+        ],
+        "title": "MetricInfo",
+        "type": "object"
+      },
+      "MvpCandidate": {
+        "properties": {
+          "is_mvp": {
+            "title": "Is Mvp",
+            "type": "boolean"
+          },
+          "model_score": {
+            "description": "Raw model output (not a calibrated probability)",
+            "title": "Model Score",
+            "type": "number"
+          },
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score_share": {
+            "description": "model_score normalised to sum to 1 within the season",
+            "title": "Score Share",
+            "type": "number"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/CandidateStats"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "team_conference_rank": {
+            "title": "Team Conference Rank",
+            "type": "integer"
+          },
+          "team_win_pct": {
+            "title": "Team Win Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "rank",
+          "player",
+          "team",
+          "model_score",
+          "score_share",
+          "is_mvp",
+          "stats",
+          "team_win_pct",
+          "team_conference_rank"
+        ],
+        "title": "MvpCandidate",
+        "type": "object"
+      },
+      "MvpModelInfo": {
+        "properties": {
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "seasons": {
+            "title": "Seasons",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "correct",
+          "seasons"
+        ],
+        "title": "MvpModelInfo",
+        "type": "object"
+      },
+      "MvpOverview": {
+        "properties": {
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "eras": {
+            "items": {
+              "$ref": "#/components/schemas/EraAccuracy"
+            },
+            "title": "Eras",
+            "type": "array"
+          },
+          "seasons": {
+            "items": {
+              "$ref": "#/components/schemas/MvpSeasonResult"
+            },
+            "title": "Seasons",
+            "type": "array"
+          },
+          "top3": {
+            "description": "Seasons where the real MVP was in the model's top 3",
+            "title": "Top3",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "correct",
+          "total",
+          "top3",
+          "eras",
+          "seasons"
+        ],
+        "title": "MvpOverview",
+        "type": "object"
+      },
+      "MvpRace": {
+        "properties": {
+          "actual_rank": {
+            "title": "Actual Rank",
+            "type": "integer"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/MvpCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "era": {
+            "title": "Era",
+            "type": "integer"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "season",
+          "era",
+          "correct",
+          "actual_rank",
+          "candidates"
+        ],
+        "title": "MvpRace",
+        "type": "object"
+      },
+      "MvpSeasonResult": {
+        "properties": {
+          "actual": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "actual_rank": {
+            "description": "Where the real MVP ranked in the model's list",
+            "title": "Actual Rank",
+            "type": "integer"
+          },
+          "candidates": {
+            "title": "Candidates",
+            "type": "integer"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "era": {
+            "description": "1 = 2000-01 to 2007-08, 2 = 2008-09 onward (each era has its own feature set)",
+            "title": "Era",
+            "type": "integer"
+          },
+          "predicted": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "season",
+          "era",
+          "predicted",
+          "actual",
+          "actual_rank",
+          "correct",
+          "candidates"
+        ],
+        "title": "MvpSeasonResult",
+        "type": "object"
+      },
+      "NextGameModelInfo": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "home_baseline": {
+            "description": "Accuracy of always picking the home team",
+            "title": "Home Baseline",
+            "type": "number"
+          },
+          "record_baseline": {
+            "description": "Accuracy of picking the team with the better record",
+            "title": "Record Baseline",
+            "type": "number"
+          },
+          "test_games": {
+            "title": "Test Games",
+            "type": "integer"
+          },
+          "test_season": {
+            "title": "Test Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "test_season",
+          "test_games",
+          "accuracy",
+          "home_baseline",
+          "record_baseline"
+        ],
+        "title": "NextGameModelInfo",
+        "type": "object"
+      },
+      "Page_PlayerSummary_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlayerSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total matching items, ignoring limit/offset",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[PlayerSummary]",
+        "type": "object"
+      },
+      "PlayerComparison": {
+        "properties": {
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricInfo"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "peer_group": {
+            "enum": [
+              "ALL",
+              "POSITION"
+            ],
+            "title": "Peer Group",
+            "type": "string"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/ComparedPlayer"
+            },
+            "title": "Players",
+            "type": "array"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "season",
+          "peer_group",
+          "metrics",
+          "players"
+        ],
+        "title": "PlayerComparison",
+        "type": "object"
+      },
+      "PlayerProfile": {
+        "properties": {
+          "career": {
+            "$ref": "#/components/schemas/CareerAverages"
+          },
+          "college": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "College"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "draft_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Number"
+          },
+          "draft_round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Round"
+          },
+          "draft_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NULL for undrafted players",
+            "title": "Draft Year"
+          },
+          "first_season": {
+            "title": "First Season",
+            "type": "string"
+          },
+          "headshot_url": {
+            "title": "Headshot Url",
+            "type": "string"
+          },
+          "height_in": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height In"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_season": {
+            "title": "Last Season",
+            "type": "string"
+          },
+          "latest_team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "mvp_seasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mvp Seasons",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NBA.com listed position, e.g. 'G-F'",
+            "examples": [
+              "G"
+            ],
+            "title": "Position"
+          },
+          "position_group": {
+            "enum": [
+              "G",
+              "F",
+              "C"
+            ],
+            "title": "Position Group",
+            "type": "string"
+          },
+          "seasons": {
+            "items": {
+              "$ref": "#/components/schemas/PlayerSeason"
+            },
+            "title": "Seasons",
+            "type": "array"
+          },
+          "seasons_played": {
+            "title": "Seasons Played",
+            "type": "integer"
+          },
+          "weight_lb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Lb"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position_group",
+          "headshot_url",
+          "position",
+          "first_season",
+          "last_season",
+          "latest_team",
+          "height_in",
+          "weight_lb",
+          "country",
+          "college",
+          "draft_year",
+          "draft_round",
+          "draft_number",
+          "seasons_played",
+          "mvp_seasons",
+          "career",
+          "seasons"
+        ],
+        "title": "PlayerProfile",
+        "type": "object"
+      },
+      "PlayerRef": {
+        "properties": {
+          "headshot_url": {
+            "title": "Headshot Url",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position_group": {
+            "enum": [
+              "G",
+              "F",
+              "C"
+            ],
+            "title": "Position Group",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position_group",
+          "headshot_url"
+        ],
+        "title": "PlayerRef",
+        "type": "object"
+      },
+      "PlayerSeason": {
+        "properties": {
+          "archetype": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Scorer",
+                  "Playmaker",
+                  "Rebounder",
+                  "Defensive Player"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NULL when below the archetype thresholds (20 games, 15 minutes per game, 12% usage)",
+            "title": "Archetype"
+          },
+          "ast_pct": {
+            "title": "Ast Pct",
+            "type": "number"
+          },
+          "ast_pg": {
+            "title": "Ast Pg",
+            "type": "number"
+          },
+          "ast_to": {
+            "title": "Ast To",
+            "type": "number"
+          },
+          "blk_pg": {
+            "title": "Blk Pg",
+            "type": "number"
+          },
+          "def_rating": {
+            "title": "Def Rating",
+            "type": "number"
+          },
+          "dreb_pct": {
+            "title": "Dreb Pct",
+            "type": "number"
+          },
+          "efg_pct": {
+            "title": "Efg Pct",
+            "type": "number"
+          },
+          "fg3_pct": {
+            "title": "Fg3 Pct",
+            "type": "number"
+          },
+          "fg_pct": {
+            "title": "Fg Pct",
+            "type": "number"
+          },
+          "ft_pct": {
+            "title": "Ft Pct",
+            "type": "number"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "min_pg": {
+            "title": "Min Pg",
+            "type": "number"
+          },
+          "net_rating": {
+            "title": "Net Rating",
+            "type": "number"
+          },
+          "off_rating": {
+            "title": "Off Rating",
+            "type": "number"
+          },
+          "oreb_pct": {
+            "title": "Oreb Pct",
+            "type": "number"
+          },
+          "pie": {
+            "title": "Pie",
+            "type": "number"
+          },
+          "pts_pg": {
+            "title": "Pts Pg",
+            "type": "number"
+          },
+          "reb_pct": {
+            "title": "Reb Pct",
+            "type": "number"
+          },
+          "reb_pg": {
+            "title": "Reb Pg",
+            "type": "number"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "stl_pg": {
+            "title": "Stl Pg",
+            "type": "number"
+          },
+          "team_abbr": {
+            "description": "Current franchise abbreviation",
+            "title": "Team Abbr",
+            "type": "string"
+          },
+          "team_abbr_then": {
+            "description": "Abbreviation used that season, e.g. 'SEA'",
+            "title": "Team Abbr Then",
+            "type": "string"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Elite",
+                  "Very Good",
+                  "Average"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "tov_pg": {
+            "title": "Tov Pg",
+            "type": "number"
+          },
+          "ts_pct": {
+            "title": "Ts Pct",
+            "type": "number"
+          },
+          "usg_pct": {
+            "title": "Usg Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "games",
+          "min_pg",
+          "pts_pg",
+          "reb_pg",
+          "ast_pg",
+          "stl_pg",
+          "blk_pg",
+          "tov_pg",
+          "fg_pct",
+          "fg3_pct",
+          "ft_pct",
+          "ts_pct",
+          "efg_pct",
+          "usg_pct",
+          "pie",
+          "off_rating",
+          "def_rating",
+          "net_rating",
+          "ast_to",
+          "oreb_pct",
+          "dreb_pct",
+          "ast_pct",
+          "reb_pct",
+          "season",
+          "team_abbr",
+          "team_abbr_then",
+          "archetype",
+          "tier"
+        ],
+        "title": "PlayerSeason",
+        "type": "object"
+      },
+      "PlayerSummary": {
+        "properties": {
+          "first_season": {
+            "title": "First Season",
+            "type": "string"
+          },
+          "headshot_url": {
+            "title": "Headshot Url",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_season": {
+            "title": "Last Season",
+            "type": "string"
+          },
+          "latest_team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NBA.com listed position, e.g. 'G-F'",
+            "examples": [
+              "G"
+            ],
+            "title": "Position"
+          },
+          "position_group": {
+            "enum": [
+              "G",
+              "F",
+              "C"
+            ],
+            "title": "Position Group",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position_group",
+          "headshot_url",
+          "position",
+          "first_season",
+          "last_season",
+          "latest_team"
+        ],
+        "title": "PlayerSummary",
+        "type": "object"
+      },
+      "Prediction": {
+        "properties": {
+          "away_team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "away_win_probability": {
+            "title": "Away Win Probability",
+            "type": "number"
+          },
+          "favorite": {
+            "title": "Favorite",
+            "type": "string"
+          },
+          "home_team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "home_win_probability": {
+            "title": "Home Win Probability",
+            "type": "number"
+          },
+          "inputs": {
+            "$ref": "#/components/schemas/PredictionInputs"
+          }
+        },
+        "required": [
+          "home_team",
+          "away_team",
+          "inputs",
+          "home_win_probability",
+          "away_win_probability",
+          "favorite"
+        ],
+        "title": "Prediction",
+        "type": "object"
+      },
+      "PredictionInputs": {
+        "properties": {
+          "away_road_win_pct": {
+            "title": "Away Road Win Pct",
+            "type": "number"
+          },
+          "away_win_pct": {
+            "title": "Away Win Pct",
+            "type": "number"
+          },
+          "defaults_from_season": {
+            "description": "Season whose final records filled any omitted inputs",
+            "title": "Defaults From Season",
+            "type": "string"
+          },
+          "home_home_win_pct": {
+            "title": "Home Home Win Pct",
+            "type": "number"
+          },
+          "home_win_pct": {
+            "title": "Home Win Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "home_win_pct",
+          "home_home_win_pct",
+          "away_win_pct",
+          "away_road_win_pct",
+          "defaults_from_season"
+        ],
+        "title": "PredictionInputs",
+        "type": "object"
+      },
+      "PredictionRequest": {
+        "description": "Predict a game. Any win % left out defaults to the team's record in the latest season.",
+        "properties": {
+          "away_road_win_pct": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Away Road Win Pct"
+          },
+          "away_team": {
+            "examples": [
+              "DAL"
+            ],
+            "maxLength": 3,
+            "minLength": 2,
+            "title": "Away Team",
+            "type": "string"
+          },
+          "away_win_pct": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Away Win Pct"
+          },
+          "home_home_win_pct": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Home Win Pct"
+          },
+          "home_team": {
+            "examples": [
+              "BOS"
+            ],
+            "maxLength": 3,
+            "minLength": 2,
+            "title": "Home Team",
+            "type": "string"
+          },
+          "home_win_pct": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Win Pct"
+          }
+        },
+        "required": [
+          "home_team",
+          "away_team"
+        ],
+        "title": "PredictionRequest",
+        "type": "object"
+      },
+      "Roster": {
+        "properties": {
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/RosterPlayer"
+            },
+            "title": "Players",
+            "type": "array"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamRef"
+          }
+        },
+        "required": [
+          "team",
+          "season",
+          "players"
+        ],
+        "title": "Roster",
+        "type": "object"
+      },
+      "RosterPlayer": {
+        "properties": {
+          "archetype": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Scorer",
+                  "Playmaker",
+                  "Rebounder",
+                  "Defensive Player"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archetype"
+          },
+          "ast_pg": {
+            "title": "Ast Pg",
+            "type": "number"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "min_pg": {
+            "title": "Min Pg",
+            "type": "number"
+          },
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "pts_pg": {
+            "title": "Pts Pg",
+            "type": "number"
+          },
+          "reb_pg": {
+            "title": "Reb Pg",
+            "type": "number"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Elite",
+                  "Very Good",
+                  "Average"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "ts_pct": {
+            "title": "Ts Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "player",
+          "games",
+          "min_pg",
+          "pts_pg",
+          "reb_pg",
+          "ast_pg",
+          "ts_pct",
+          "archetype",
+          "tier"
+        ],
+        "title": "RosterPlayer",
+        "type": "object"
+      },
+      "SeasonInfo": {
+        "properties": {
+          "champion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mvp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlayerRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "season",
+          "champion",
+          "mvp"
+        ],
+        "title": "SeasonInfo",
+        "type": "object"
+      },
+      "SimilarPlayer": {
+        "properties": {
+          "archetype": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Scorer",
+                  "Playmaker",
+                  "Rebounder",
+                  "Defensive Player"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archetype"
+          },
+          "ast_pg": {
+            "title": "Ast Pg",
+            "type": "number"
+          },
+          "distance": {
+            "description": "Euclidean distance between archetype scores; lower is more similar",
+            "title": "Distance",
+            "type": "number"
+          },
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "pts_pg": {
+            "title": "Pts Pg",
+            "type": "number"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "reb_pg": {
+            "title": "Reb Pg",
+            "type": "number"
+          },
+          "team_abbr": {
+            "title": "Team Abbr",
+            "type": "string"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Elite",
+                  "Very Good",
+                  "Average"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          }
+        },
+        "required": [
+          "rank",
+          "player",
+          "team_abbr",
+          "archetype",
+          "tier",
+          "distance",
+          "pts_pg",
+          "reb_pg",
+          "ast_pg"
+        ],
+        "title": "SimilarPlayer",
+        "type": "object"
+      },
+      "SimilarPlayers": {
+        "properties": {
+          "archetype": {
+            "enum": [
+              "Scorer",
+              "Playmaker",
+              "Rebounder",
+              "Defensive Player"
+            ],
+            "title": "Archetype",
+            "type": "string"
+          },
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "similar": {
+            "items": {
+              "$ref": "#/components/schemas/SimilarPlayer"
+            },
+            "title": "Similar",
+            "type": "array"
+          },
+          "tier": {
+            "enum": [
+              "Elite",
+              "Very Good",
+              "Average"
+            ],
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "season",
+          "player",
+          "archetype",
+          "tier",
+          "similar"
+        ],
+        "title": "SimilarPlayers",
+        "type": "object"
+      },
+      "TeamDetail": {
+        "properties": {
+          "abbr": {
+            "examples": [
+              "OKC"
+            ],
+            "title": "Abbr",
+            "type": "string"
+          },
+          "championships": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Championships",
+            "type": "array"
+          },
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "conference": {
+            "enum": [
+              "East",
+              "West"
+            ],
+            "title": "Conference",
+            "type": "string"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/TeamRecord"
+          },
+          "logo_url": {
+            "title": "Logo Url",
+            "type": "string"
+          },
+          "name": {
+            "examples": [
+              "Oklahoma City Thunder"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "nickname": {
+            "title": "Nickname",
+            "type": "string"
+          },
+          "primary_color": {
+            "examples": [
+              "#007AC1"
+            ],
+            "title": "Primary Color",
+            "type": "string"
+          },
+          "seasons": {
+            "items": {
+              "$ref": "#/components/schemas/TeamSeason"
+            },
+            "title": "Seasons",
+            "type": "array"
+          },
+          "secondary_color": {
+            "title": "Secondary Color",
+            "type": "string"
+          },
+          "total_losses": {
+            "title": "Total Losses",
+            "type": "integer"
+          },
+          "total_wins": {
+            "title": "Total Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "abbr",
+          "name",
+          "primary_color",
+          "secondary_color",
+          "logo_url",
+          "city",
+          "nickname",
+          "conference",
+          "latest",
+          "championships",
+          "total_wins",
+          "total_losses",
+          "seasons"
+        ],
+        "title": "TeamDetail",
+        "type": "object"
+      },
+      "TeamForm": {
+        "properties": {
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/FormGame"
+            },
+            "title": "Games",
+            "type": "array"
+          },
+          "home_win_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Win Pct"
+          },
+          "losses": {
+            "title": "Losses",
+            "type": "integer"
+          },
+          "road_win_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Win Pct"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "win_pct": {
+            "title": "Win Pct",
+            "type": "number"
+          },
+          "wins": {
+            "title": "Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team",
+          "season",
+          "wins",
+          "losses",
+          "win_pct",
+          "home_win_pct",
+          "road_win_pct",
+          "games"
+        ],
+        "title": "TeamForm",
+        "type": "object"
+      },
+      "TeamRecord": {
+        "properties": {
+          "conference_rank": {
+            "title": "Conference Rank",
+            "type": "integer"
+          },
+          "losses": {
+            "title": "Losses",
+            "type": "integer"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "win_pct": {
+            "title": "Win Pct",
+            "type": "number"
+          },
+          "wins": {
+            "title": "Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "season",
+          "wins",
+          "losses",
+          "win_pct",
+          "conference_rank"
+        ],
+        "title": "TeamRecord",
+        "type": "object"
+      },
+      "TeamRef": {
+        "properties": {
+          "abbr": {
+            "examples": [
+              "OKC"
+            ],
+            "title": "Abbr",
+            "type": "string"
+          },
+          "logo_url": {
+            "title": "Logo Url",
+            "type": "string"
+          },
+          "name": {
+            "examples": [
+              "Oklahoma City Thunder"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "primary_color": {
+            "examples": [
+              "#007AC1"
+            ],
+            "title": "Primary Color",
+            "type": "string"
+          },
+          "secondary_color": {
+            "title": "Secondary Color",
+            "type": "string"
+          }
+        },
+        "required": [
+          "abbr",
+          "name",
+          "primary_color",
+          "secondary_color",
+          "logo_url"
+        ],
+        "title": "TeamRef",
+        "type": "object"
+      },
+      "TeamSeason": {
+        "properties": {
+          "conference": {
+            "enum": [
+              "East",
+              "West"
+            ],
+            "title": "Conference",
+            "type": "string"
+          },
+          "conference_rank": {
+            "title": "Conference Rank",
+            "type": "integer"
+          },
+          "is_champion": {
+            "title": "Is Champion",
+            "type": "boolean"
+          },
+          "losses": {
+            "title": "Losses",
+            "type": "integer"
+          },
+          "point_diff_pg": {
+            "title": "Point Diff Pg",
+            "type": "number"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "team_abbr_then": {
+            "title": "Team Abbr Then",
+            "type": "string"
+          },
+          "win_pct": {
+            "title": "Win Pct",
+            "type": "number"
+          },
+          "wins": {
+            "title": "Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "season",
+          "wins",
+          "losses",
+          "win_pct",
+          "conference_rank",
+          "team_abbr_then",
+          "conference",
+          "point_diff_pg",
+          "is_champion"
+        ],
+        "title": "TeamSeason",
+        "type": "object"
+      },
+      "TeamSummary": {
+        "properties": {
+          "abbr": {
+            "examples": [
+              "OKC"
+            ],
+            "title": "Abbr",
+            "type": "string"
+          },
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "conference": {
+            "enum": [
+              "East",
+              "West"
+            ],
+            "title": "Conference",
+            "type": "string"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/TeamRecord"
+          },
+          "logo_url": {
+            "title": "Logo Url",
+            "type": "string"
+          },
+          "name": {
+            "examples": [
+              "Oklahoma City Thunder"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "nickname": {
+            "title": "Nickname",
+            "type": "string"
+          },
+          "primary_color": {
+            "examples": [
+              "#007AC1"
+            ],
+            "title": "Primary Color",
+            "type": "string"
+          },
+          "secondary_color": {
+            "title": "Secondary Color",
+            "type": "string"
+          }
+        },
+        "required": [
+          "abbr",
+          "name",
+          "primary_color",
+          "secondary_color",
+          "logo_url",
+          "city",
+          "nickname",
+          "conference",
+          "latest"
+        ],
+        "title": "TeamSummary",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "\nRead-only API over 26 NBA seasons (2000-01 to 2025-26) of player and team data, plus model output:\nleave-one-season-out MVP predictions, player archetypes, and a next-game win-probability model.\n\nCounting stats ending in `_pg` are per-game averages; fields ending in `_pct` are fractions (0.512 = 51.2%).\n",
+    "title": "NBA Analytics API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/games/predict": {
+      "post": {
+        "operationId": "predict_game_api_v1_games_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prediction"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict a game's winner",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health check",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/v1/meta": {
+      "get": {
+        "operationId": "get_meta_api_v1_meta_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dataset range and headline model metrics",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/v1/mvp": {
+      "get": {
+        "operationId": "get_mvp_overview_api_v1_mvp_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MvpOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "MVP model accuracy across all seasons",
+        "tags": [
+          "mvp"
+        ]
+      }
+    },
+    "/api/v1/mvp/{season}": {
+      "get": {
+        "operationId": "get_mvp_race_api_v1_mvp__season__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "season",
+            "required": true,
+            "schema": {
+              "examples": [
+                "2023-24"
+              ],
+              "pattern": "^\\d{4}-\\d{2}$",
+              "title": "Season",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MvpRace"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "MVP race for one season",
+        "tags": [
+          "mvp"
+        ]
+      }
+    },
+    "/api/v1/players": {
+      "get": {
+        "operationId": "search_players_api_v1_players_get",
+        "parameters": [
+          {
+            "description": "Name search; accents and case are ignored",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 50,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Name search; accents and case are ignored",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "position_group",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "G",
+                    "F",
+                    "C"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Position Group"
+            }
+          },
+          {
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "2023-24"
+              ],
+              "title": "Season"
+            }
+          },
+          {
+            "description": "Played for this franchise",
+            "in": "query",
+            "name": "team",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 3,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Played for this franchise",
+              "title": "Team"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PlayerSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search players",
+        "tags": [
+          "players"
+        ]
+      }
+    },
+    "/api/v1/players/compare": {
+      "get": {
+        "operationId": "compare_players_api_v1_players_compare_get",
+        "parameters": [
+          {
+            "description": "Repeat the parameter: ?ids=1&ids=2",
+            "in": "query",
+            "name": "ids",
+            "required": true,
+            "schema": {
+              "description": "Repeat the parameter: ?ids=1&ids=2",
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 4,
+              "minItems": 2,
+              "title": "Ids",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Defaults to the latest season they all played",
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the latest season they all played",
+              "title": "Season"
+            }
+          },
+          {
+            "description": "Percentiles vs all players, or vs each player's own position group",
+            "in": "query",
+            "name": "peer_group",
+            "required": false,
+            "schema": {
+              "default": "ALL",
+              "description": "Percentiles vs all players, or vs each player's own position group",
+              "enum": [
+                "ALL",
+                "POSITION"
+              ],
+              "title": "Peer Group",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerComparison"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare players",
+        "tags": [
+          "players"
+        ]
+      }
+    },
+    "/api/v1/players/{player_id}": {
+      "get": {
+        "operationId": "get_player_api_v1_players__player_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "player_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Player Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Player profile",
+        "tags": [
+          "players"
+        ]
+      }
+    },
+    "/api/v1/players/{player_id}/similar": {
+      "get": {
+        "operationId": "get_similar_players_api_v1_players__player_id__similar_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "player_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Player Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Defaults to the player's latest season with archetype data",
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the player's latest season with archetype data",
+              "title": "Season"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarPlayers"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Similar players",
+        "tags": [
+          "players"
+        ]
+      }
+    },
+    "/api/v1/seasons": {
+      "get": {
+        "operationId": "list_seasons_api_v1_seasons_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SeasonInfo"
+                  },
+                  "title": "Response List Seasons Api V1 Seasons Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Seasons with champion and MVP",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/v1/teams": {
+      "get": {
+        "operationId": "list_teams_api_v1_teams_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamSummary"
+                  },
+                  "title": "Response List Teams Api V1 Teams Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "All franchises with their latest record",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{abbr}": {
+      "get": {
+        "operationId": "get_team_api_v1_teams__abbr__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "abbr",
+            "required": true,
+            "schema": {
+              "examples": [
+                "BOS"
+              ],
+              "maxLength": 3,
+              "minLength": 2,
+              "title": "Abbr",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Franchise history",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{abbr}/form": {
+      "get": {
+        "operationId": "get_form_api_v1_teams__abbr__form_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "abbr",
+            "required": true,
+            "schema": {
+              "examples": [
+                "BOS"
+              ],
+              "maxLength": 3,
+              "minLength": 2,
+              "title": "Abbr",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Defaults to the latest available season",
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the latest available season",
+              "title": "Season"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamForm"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Game-by-game record (2020-21 onward)",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{abbr}/roster": {
+      "get": {
+        "operationId": "get_roster_api_v1_teams__abbr__roster_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "abbr",
+            "required": true,
+            "schema": {
+              "examples": [
+                "BOS"
+              ],
+              "maxLength": 3,
+              "minLength": 2,
+              "title": "Abbr",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Defaults to the latest available season",
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the latest available season",
+              "title": "Season"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Roster"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Players on a team in a season",
+        "tags": [
+          "teams"
+        ]
+      }
+    }
+  }
+}
