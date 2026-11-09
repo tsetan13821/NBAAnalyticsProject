@@ -31,18 +31,20 @@ flowchart TD
 The data extraction layer interface directly with the official NBA stats database via the `nba_api` Python library.
 
 ### Key Scripts & Endpoints
-- **[data_collection.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/data_collection.py)**: Orchestrates historical player stats extraction.
+- **[data_collection.py](src/data_collection.py)**: Orchestrates historical player stats extraction.
   - `leaguedashplayerstats.LeagueDashPlayerStats`: Extracts detailed per-season player data.
   - `measure_type_detailed_defense='Base'`: Collects traditional stats (Points, Rebounds, Assists, Steals, Blocks, Field Goal %, 3P %, Free Throw %).
   - `measure_type_detailed_defense='Advanced'`: Collects advanced efficiency metrics (True Shooting %, Usage %, Player Impact Estimate (PIE), Offensive/Defensive/Net Ratings, Assist/Rebound Percentages).
-- **[build_mvp_dataset.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/data_pipeline/build_mvp_dataset.py)**: Enriches player stats with team context and target labels.
+- **[build_mvp_dataset.py](src/data_pipeline/build_mvp_dataset.py)**: Enriches player stats with team context and target labels.
   - `leaguestandings.LeagueStandings`: Fetches team wins, losses, win percentages (`WinPCT`), and average point differentials (`DiffPointsPG`).
   - Target Labeling: Injects historical MVP winner annotations (`IS_MVP`) for every season from 2000-01 to 2025-26.
 
 ### Pipeline Controls & Rate Limiting
-- Iterates across seasons defined in [config.yaml](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/config/config.yaml) (`2000-01` to `2025-26`).
+- Iterates across seasons defined in [config.yaml](config/config.yaml) (`2000-01` to `2025-26`).
 - Enforces strict execution delays (`time.sleep(0.6)` and `time.sleep(1.2)`) between requests to respect NBA API rate limits.
 - Merges base and advanced dataframes on (`PLAYER_ID`, `PLAYER_NAME`, `TEAM_ID`, `TEAM_ABBREVIATION`), dropping duplicate overlapping schema columns.
+- **Counting stats are season totals** (`MIN`, `PTS`, `REB`, `AST`, `STL`, `BLK`, `TOV`), the API's default. `src/features.py::to_per_game` converts them wherever per-game values are needed (clustering, dashboard displays).
+- **Franchise matching**: player stats use the team abbreviation of the time (`SEA`, `NJN`, `NOH`, `NOK`, `VAN`, `CHH`), while standings are keyed by current franchise. `src/nba_reference.py` maps each historical abbreviation to its franchise (e.g. `SEA` → `OKC`) before the merge, and the build fails if any player-season is left unmatched.
 
 ---
 
@@ -52,17 +54,18 @@ Raw sports statistical datasets are noisy—bench players appearing in only 2 ga
 
 ### 1. Games Played & Noise Cutoffs
 - **Raw Baseline**: Excludes players with `< 20` Games Played (`GP < 20`).
+- **Clustering Pool**: Requires $\ge 15$ minutes per game and usage $\ge 12\%$.
 - **MVP Candidate Pool**: Requires $\ge 50$ Games Played (`GP >= 50`).
 - **All-Star Candidate Pool**: Requires $\ge 45$ Games Played (`GP >= 45`) and teams within top 10 conference seeds.
 
 ### 2. Domain Heuristic Filters ("The Westbrook Rule")
-Found in [mvp_prediction.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/models/mvp_prediction.py#L8-L42):
+Found in [mvp_prediction.py](src/models/mvp_prediction.py#L8-L42):
 - **Team Win Percentage Floor**: Candidates must belong to teams winning at least $55\%$ of games (`WinPCT >= 0.55`).
 - **Mid-Seed Rule**: If a team's win percentage is between $55\%$ and $65\%$, the player must possess extraordinary individual output (`PIE >= 0.18` and `USG_PCT >= 0.28`) to remain an MVP candidate.
 - **Role Player Rejection**: MVPs carry massive offensive responsibility. Candidates are filtered out if `USG_PCT < 18%`, `PIE < 12%`, or total points contribution `(PTS + AST * 2) < 1200`.
 
 ### 3. Dynamic Positional Mapping
-Found in [all_star_prediction.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/models/all_star_prediction.py#L16-L34):
+Found in [all_star_prediction.py](src/models/all_star_prediction.py#L16-L34):
 - Dynamically assigns positions (`Guard (G)`, `Forward (F)`, `Center (C)`) based on per-game assists, rebounds, and blocks ratios.
 - Includes manual overrides for positional superstars (e.g., LeBron James, Nikola Jokić, Giannis Antetokounmpo, Kevin Durant, Stephen Curry).
 
@@ -98,28 +101,31 @@ Voting criteria changed significantly over time. The model adapts features depen
 ## 4. 🤖 Machine Learning Models & Algorithms
 
 ### 1. 🏆 MVP Prediction Engine (`XGBClassifier` with LOOCV)
-- **Source**: [mvp_prediction.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/models/mvp_prediction.py)
+- **Source**: [mvp_prediction.py](src/models/mvp_prediction.py)
 - **Algorithm**: Extreme Gradient Boosting (`XGBClassifier`) with hyperparameters `max_depth=3`, `learning_rate=0.1`, `n_estimators=100`.
 - **Class Reweighting**: Sets `scale_pos_weight=50` to compensate for the extreme class imbalance (1 MVP vs. ~450 non-MVPs per season).
 - **Validation Strategy**: **Leave-One-Season-Out Cross Validation (LOOCV)**. To predict season $S$, the model trains on all historical data outside $S$, preventing future bias / temporal leakage.
 - **Accuracy**: Achieves **~73.1% historical accuracy** in identifying the exact #1 ranked MVP winner across 26 seasons.
 
-### 2. 📊 Unsupervised Player Clustering & Tiering (K-Means)
-- **Source**: [player_clustering.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/models/player_clustering.py)
-- **Archetype Assignment**: Groups players into 4 primary playstyles (`Scorer`, `Playmaker`, `Rebounder`, `Defensive Player`) based on their maximum standardized feature composite score.
+### 2. 📊 Player Archetypes & K-Means Tiering
+- **Source**: [player_clustering.py](src/models/player_clustering.py)
+- **Archetype Assignment** (rule-based, not clustering): each player-season gets four composite scores from standardized per-game and rate stats (`Scorer`: PTS, USG_PCT, TS_PCT; `Playmaker`: AST, AST_PCT; `Rebounder`: REB, REB_PCT; `Defensive Player`: STL, BLK, inverted DEF_RATING). The highest score sets the archetype.
 - **1D K-Means Tiering**: Fits a $K=3$ K-Means model on the composite archetype scores to categorize players into natural performance tiers: `Elite`, `Very Good`, and `Average`.
 
 ### 3. ⭐ All-Star Selection Engine
-- **Source**: [all_star_prediction.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/models/all_star_prediction.py)
+- **Source**: [all_star_prediction.py](src/models/all_star_prediction.py)
 - **Impact Formula**:
   $$\text{Impact Score} = (\text{PIE} \times 100) + (\text{WinPCT} \times 30) + (\text{PTS} + 1.5 \times \text{AST} + 1.2 \times \text{REB}) + \left(\frac{\text{NET\_RATING}}{4}\right)$$
+- PTS, AST and REB are per game. This is a hand-weighted formula, not a trained model.
 - **Roster Selection Logic**: Ranks players within Eastern and Western conferences and selects 6 Guards, 6 Forwards, and 3 Centers per conference.
 
 ### 4. 🔮 Next Game Winner Predictor (`XGBClassifier`)
-- **Source**: [next_game_prediction.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/src/models/next_game_prediction.py)
+- **Source**: [next_game_prediction.py](src/models/next_game_prediction.py)
 - **Algorithm**: `XGBClassifier` (`max_depth=4`, `learning_rate=0.1`, `eval_metric='logloss'`).
-- **Features**: Historical running Home Win %, Away Win %, Season Win %, `WinPCT_Diff`, and `HomeAway_Diff`.
-- **Model Storage**: Saved as binary model file at [next_game_model.pkl](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/saved_models/next_game_model.pkl).
+- **Features**: Season-to-date overall, home and road win % for both teams (computed only from games before the matchup), plus `WinPCT_Diff` and `HomeAway_Diff`.
+- **Data**: Regular seasons 2020-21 to 2025-26 (configured in `config.yaml` under `next_game`). Games where either team has played fewer than 10 games are skipped.
+- **Validation**: Time-based split, trained on earlier seasons and tested on the most recent full season. The deployed model is then refit on all seasons.
+- **Model Storage**: Saved as binary model file at [next_game_model.pkl](saved_models/next_game_model.pkl).
 
 ---
 
@@ -127,8 +133,10 @@ Voting criteria changed significantly over time. The model adapts features depen
 
 ### 1. 🏆 MVP Model LOOCV Benchmark Results (2000-01 to 2025-26)
 - **Overall Top-1 Rank Accuracy**: **19 / 26 seasons (73.1%)**
-- **Modern Analytics Era Accuracy (2007-08 to 2025-26)**: **17 / 19 seasons (89.5%)**
-- **Domain Candidate Filtering**: Pruned 10,174 raw player-seasons down to 283 elite candidates.
+- **Hero Ball Era (2000-01 to 2007-08)**: **3 / 8 seasons (37.5%)**
+- **Analytics Era (2008-09 to 2025-26)**: **16 / 18 seasons (88.9%)**
+- **Domain Candidate Filtering**: Pruned 10,617 raw player-seasons down to 285 elite candidates.
+- **Caveat**: the candidate filters and per-era feature sets were chosen while looking at these same LOOCV results, so the accuracy is likely optimistic for a genuinely new season.
 
 #### Season-by-Season LOOCV Prediction Breakdown:
 
@@ -165,56 +173,64 @@ Voting criteria changed significantly over time. The model adapts features depen
 ```
               precision    recall  f1-score   support
 
- Not MVP (0)       0.97      0.97      0.97       257
+ Not MVP (0)       0.97      0.97      0.97       259
      MVP (1)       0.73      0.73      0.73        26
 
-    accuracy                           0.95       283
-   macro avg       0.85      0.85      0.85       283
-weighted avg       0.95      0.95      0.95       283
+    accuracy                           0.95       285
+   macro avg       0.85      0.85      0.85       285
+weighted avg       0.95      0.95      0.95       285
 ```
 
 ---
 
 ### 2. 📊 Unsupervised Player Archetype & Tier Clustering Results
-- **Dataset**: 9,790 qualifying player-seasons evaluated after filtering low-minute/low-usage noise.
+- **Dataset**: 7,474 qualifying player-seasons (≥ 20 games, ≥ 15 minutes per game, ≥ 12% usage).
 - **Archetype & Tier Breakdown**:
 
 | Archetype Cluster | Total Players | Elite Tier Count | Sample Elite Tier Players |
 | :--- | :---: | :---: | :--- |
-| **Scorer** | 2,127 | 329 | Allen Iverson, Kobe Bryant, Antawn Jamison, Glenn Robinson |
-| **Playmaker** | 2,671 | 364 | Steve Nash, Andre Miller, Baron Davis, Darrell Armstrong |
-| **Rebounder** | 3,054 | 571 | Tim Duncan, Anthony Mason, Antonio Davis, Antonio McDyess |
-| **Defensive Player** | 1,938 | 253 | Ben Wallace, Adonal Foyle, Arvydas Sabonis, Bruce Bowen |
+| **Scorer** | 1,639 | 286 | Joel Embiid, James Harden, Luka Dončić, Stephen Curry |
+| **Playmaker** | 2,062 | 311 | Rajon Rondo, Chris Paul, Steve Nash, James Harden |
+| **Rebounder** | 2,310 | 405 | Andre Drummond, DeAndre Jordan, Clint Capela, Kevin Love |
+| **Defensive Player** | 1,463 | 207 | Ben Wallace, Andrei Kirilenko, Theo Ratliff, Gerald Wallace |
 
 ---
 
 ### 3. 🔮 Next Game Matchup Prediction Results
-- **Test Set Accuracy**: **59.28%** (evaluated on 938 out-of-sample regular season game matchups).
-- **Classification Report**:
+- **Held-out season**: 2025-26 (1,075 games after skipping each team's first 10 games). Trained on 2020-21 to 2024-25.
+
+| Method | Accuracy |
+| :--- | :---: |
+| XGBoost model | **67.5%** |
+| Always pick the home team | 54.9% |
+| Pick the team with the better record | 68.1% |
+
+The model clearly beats home-court alone but does **not** beat simply picking the better-record team; its features carry little information beyond that. Adding point differential, rest days or injury data would be the next step.
+
 ```
               precision    recall  f1-score   support
 
-    Away Win (0)    0.57      0.47      0.51       430
-    Home Win (1)    0.61      0.70      0.65       508
+    Away Win (0)    0.66      0.58      0.62       485
+    Home Win (1)    0.69      0.76      0.72       590
 
-        accuracy                        0.59       938
-       macro avg    0.59      0.58      0.58       938
-    weighted avg    0.59      0.59      0.59       938
+        accuracy                        0.68      1075
+       macro avg    0.67      0.67      0.67      1075
+    weighted avg    0.67      0.68      0.67      1075
 ```
 
 ---
 
 ## 6. 🖥️ Interactive Streamlit Dashboard
 
-The web interface is located in [streamlit_app/](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app) and features 7 pages:
+The web interface is located in [streamlit_app/](streamlit_app) and features 7 pages:
 
-1. **Welcome Dashboard** ([app.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/app.py)): Project landing page.
-2. **Player Stats Analysis** ([1_🏀_Player_Stats.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/pages/1_%F0%9F%8F%80_Player_Stats.py)): Box scores, percentile filters, and head-to-head player comparisons.
-3. **Team Insights** ([2_📈_Team_Insights.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/pages/2_%F0%9F%93%98_Team_Insights.py)): Offensive vs. Defensive net efficiency quadrant analysis.
-4. **MVP Model Predictions** ([3_🤖_Model_Predictions.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/pages/3_%F0%9F%A4%96_Model_Predictions.py)): Live single-season MVP prediction runner and full 26-season historical LOOCV accuracy breakdown.
-5. **Player Clustering** ([4_📊_Player_Clusters.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/pages/4_%F0%9F%93%8A_Player_Clusters.py)): Interactive playstyle archetype distribution and performance tier viewer.
-6. **All-Star Selections** ([6_⭐_All_Star_Predictions.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/pages/6_%E2%AD%90_All_Star_Predictions.py)): Displays predicted East & West All-Star rosters.
-7. **Next Game Predictor** ([7_🔮_Next_Game_Prediction.py](file:///c:/Users/ten2i/OneDrive/Desktop/NBAAnalytics/NBAAnalyticsProject/streamlit_app/pages/7_%F0%9F%94%AE_Next_Game_Prediction.py)): Forecasts head-to-head match outcomes based on momentum and home/away differentials.
+1. **Welcome Dashboard** ([app.py](streamlit_app/app.py)): Project landing page.
+2. **Player Stats Analysis** ([1_🏀_Player_Stats.py](streamlit_app/pages/1_%F0%9F%8F%80_Player_Stats.py)): Per-game stats, percentile radar charts, and head-to-head player comparisons within an inferred position.
+3. **Team Insights** ([2_📈_Team_Insights.py](streamlit_app/pages/2_%F0%9F%93%88_Team_Insights.py)): Franchise win % over time (relocated teams grouped with their current franchise), best/worst seasons, and championships.
+4. **MVP Model Predictions** ([3_🤖_Model_Predictions.py](streamlit_app/pages/3_%F0%9F%A4%96_Model_Predictions.py)): Live single-season MVP prediction runner and full 26-season historical LOOCV accuracy breakdown.
+5. **Player Clustering** ([4_📊_Player_Clusters.py](streamlit_app/pages/4_%F0%9F%93%8A_Player_Clusters.py)): Interactive playstyle archetype distribution and performance tier viewer.
+6. **All-Star Selections** ([6_⭐_All_Star_Predictions.py](streamlit_app/pages/6_%E2%AD%90_All_Star_Predictions.py)): Displays predicted East & West All-Star rosters.
+7. **Next Game Predictor** ([7_🔮_Next_Game_Prediction.py](streamlit_app/pages/7_%F0%9F%94%AE_Next_Game_Prediction.py)): Forecasts which team wins from season-to-date overall, home and road win percentages (adjustable with sliders).
 
 ---
 
@@ -236,6 +252,10 @@ NBAAnalyticsProject/
 │   └── next_game_model.pkl             # Serialized XGBoost model for game prediction
 ├── src/
 │   ├── data_collection.py              # Ingests NBA API base & advanced stats
+│   ├── pipeline.py                     # Rebuilds all datasets and models in order
+│   ├── paths.py                        # Absolute paths to data, config and model files
+│   ├── nba_reference.py                # MVP winners, champions, franchises, conferences
+│   ├── features.py                     # Per-game conversion and position inference
 │   ├── data_pipeline/
 │   │   └── build_mvp_dataset.py        # Fetches standings & attaches MVP target labels
 │   └── models/
@@ -245,7 +265,8 @@ NBAAnalyticsProject/
 │       └── next_game_prediction.py     # Team win predictor model training
 ├── streamlit_app/
 │   ├── app.py                          # Streamlit entrypoint
-│   └── pages/                          # Interactive multi-page dashboard scripts
+│   ├── pages/                          # Interactive multi-page dashboard scripts
+│   └── utils/data.py                   # Shared cached data loaders for the pages
 └── requirements.txt                    # Project Python dependencies
 ```
 
@@ -268,22 +289,24 @@ pip install -r requirements.txt
 ```
 
 ### 2. Run Data Ingestion & Model Pipelines
+Run commands from the repository root as modules (`python -m ...`) so the `src` package imports resolve.
 ```bash
-# Data Collection
-python src/data_collection.py
+# Rebuild every dataset and model in order (uses the cached raw player stats)
+python -m src.pipeline
 
-# Build MVP & Standings Dataset
-python src/data_pipeline/build_mvp_dataset.py
+# ...or also re-download raw player stats and game results from the NBA API
+python -m src.pipeline --fetch
 
-# Run MVP Model Cross-Validation CLI
-python src/models/mvp_prediction.py
-
-# Run Player Clustering Pipeline
-python src/models/player_clustering.py
+# Individual steps
+python -m src.data_collection
+python -m src.data_pipeline.build_mvp_dataset
+python -m src.models.player_clustering
+python -m src.models.all_star_prediction
+python -m src.models.next_game_prediction [--refresh]
+python -m src.models.mvp_prediction
 ```
 
 ### 3. Launch Interactive Streamlit Dashboard
 ```bash
-cd streamlit_app
-streamlit run app.py
+streamlit run streamlit_app/app.py
 ```
