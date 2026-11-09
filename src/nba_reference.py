@@ -41,7 +41,7 @@ CHAMPIONS = {
     '2012-13': 'MIA', '2013-14': 'SAS', '2014-15': 'GSW', '2015-16': 'CLE',
     '2016-17': 'GSW', '2017-18': 'GSW', '2018-19': 'TOR', '2019-20': 'LAL',
     '2020-21': 'MIL', '2021-22': 'GSW', '2022-23': 'DEN', '2023-24': 'BOS',
-    '2024-25': 'OKC',
+    '2024-25': 'OKC', '2025-26': 'NYK',
 }
 
 # Historical team abbreviations used in player stats -> current franchise abbreviation
