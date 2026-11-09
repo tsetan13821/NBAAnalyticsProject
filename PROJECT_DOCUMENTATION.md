@@ -229,8 +229,8 @@ The web interface is located in [streamlit_app/](streamlit_app) and features 7 p
 3. **Team Insights** ([2_📈_Team_Insights.py](streamlit_app/pages/2_%F0%9F%93%88_Team_Insights.py)): Franchise win % over time (relocated teams grouped with their current franchise), best/worst seasons, and championships.
 4. **MVP Model Predictions** ([3_🤖_Model_Predictions.py](streamlit_app/pages/3_%F0%9F%A4%96_Model_Predictions.py)): Live single-season MVP prediction runner and full 26-season historical LOOCV accuracy breakdown.
 5. **Player Clustering** ([4_📊_Player_Clusters.py](streamlit_app/pages/4_%F0%9F%93%8A_Player_Clusters.py)): Interactive playstyle archetype distribution and performance tier viewer.
-6. **All-Star Selections** ([6_⭐_All_Star_Predictions.py](streamlit_app/pages/6_%E2%AD%90_All_Star_Predictions.py)): Displays predicted East & West All-Star rosters.
-7. **Next Game Predictor** ([7_🔮_Next_Game_Prediction.py](streamlit_app/pages/7_%F0%9F%94%AE_Next_Game_Prediction.py)): Forecasts which team wins from season-to-date overall, home and road win percentages (adjustable with sliders).
+6. **All-Star Selections** ([5_⭐_All_Star_Predictions.py](streamlit_app/pages/5_%E2%AD%90_All_Star_Predictions.py)): Displays predicted East & West All-Star rosters.
+7. **Next Game Predictor** ([6_🔮_Next_Game_Prediction.py](streamlit_app/pages/6_%F0%9F%94%AE_Next_Game_Prediction.py)): Forecasts which team wins from season-to-date overall, home and road win percentages (adjustable with sliders).
 
 ---
 

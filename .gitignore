@@ -1,10 +1,15 @@
-# data/raw/*
-!data/raw/.gitkeep
-# data/processed/*
-!data/processed/.gitkeep
-# saved_models/*
-!saved_models/.gitkeep
-.env
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Secrets
 .env
+
+# Data and models are committed on purpose (the Streamlit deployment reads them).
+# Keep the .gitkeep files so the folders exist in a fresh clone.
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!saved_models/.gitkeep
