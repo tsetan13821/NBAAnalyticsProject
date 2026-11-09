@@ -12,22 +12,24 @@
       3. copies the downloaded injury reports from this checkout, so they aren't downloaded again
       4. registers a Windows scheduled task that runs scripts\refresh.ps1 in that clone
 
-    The task runs three times a day, at times given in US Eastern time and converted to this PC's time
-    zone. A run missed while the PC was off or asleep starts as soon as it is back on. The pre-game
-    injury reports, overnight in Asia and Europe, are covered by the GitHub Actions refresh. The log is
-    data\cache\refresh.log in the clone.
+    The task runs three times a day, at times on this PC's clock. A run missed while the PC was off or
+    asleep starts as soon as it is back on. The GitHub Actions refresh keeps the injury report fresh
+    in between. The log is data\cache\refresh.log in the clone.
 
     Run it again after requirements.txt changes, or to change the times. Python 3.11+ must be installed.
 
 .EXAMPLE
     .\scripts\install-refresh-task.ps1
 .EXAMPLE
+    .\scripts\install-refresh-task.ps1 -Times '19:00', '23:30'
+.EXAMPLE
     .\scripts\install-refresh-task.ps1 -Remove
 #>
 param(
     [string]$Folder = (Join-Path $env:LOCALAPPDATA 'NBAAnalyticsRefresh'),
-    # US Eastern. Games end by about 1:30 AM ET and the results are online soon after.
-    [string[]]$EasternTimes = @('02:30', '08:00', '12:30'),
+    # This PC's clock (set for India, US Eastern + 10:30 in winter). NBA games end by about 1:30 AM
+    # Eastern (noon here): 8 PM picks up last night's results, 5 AM comes just before the evening games.
+    [string[]]$Times = @('20:00', '00:00', '05:00'),
     [string]$Python = 'python',
     [switch]$Remove
 )
@@ -74,14 +76,7 @@ if (Test-Path $cache) {
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed (exit $LASTEXITCODE)" }
 }
 
-# Eastern times to this PC's clock (computed for today: rerun after a daylight-saving change to stay exact)
-$eastern = [TimeZoneInfo]::FindSystemTimeZoneById('Eastern Standard Time')
-$today = [DateTime]::Today
-$localTimes = foreach ($time in $EasternTimes) {
-    $et = [DateTime]::ParseExact($time, 'HH:mm', $null)
-    $at = [DateTime]::new($today.Year, $today.Month, $today.Day, $et.Hour, $et.Minute, 0, [DateTimeKind]::Unspecified)
-    [TimeZoneInfo]::ConvertTime($at, $eastern, [TimeZoneInfo]::Local)
-}
+$localTimes = foreach ($time in $Times) { [DateTime]::ParseExact($time, 'HH:mm', $null) }
 
 $script = Join-Path $repo 'scripts\refresh.ps1'
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' `

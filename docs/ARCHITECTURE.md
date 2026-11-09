@@ -87,7 +87,7 @@ Every input is computed walking through the games in date order, so a prediction
 The refresh runs on two machines, because stats.nba.com (results and the schedule) refuses cloud servers while the injury reports, served from elsewhere, don't:
 
 - **GitHub Actions** (`.github/workflows/refresh-games.yml`), five times a day from the morning to before the late tip-offs (US Eastern): the injury report only (`--injuries-only`). The PDFs are kept between runs with `actions/cache`.
-- **A scheduled task on a home PC** (`scripts/install-refresh-task.ps1`), three times a day after the games: everything, results included. It works in its own clone of the repository, so it never commits on the branch being worked on, and a run missed while the PC was off starts when it is back on. Its log is `data/cache/refresh.log` in that clone.
+- **A scheduled task on a home PC** (`scripts/install-refresh-task.ps1`), three times a day on the PC's clock (8 PM, midnight and 5 AM by default, set for India): everything, results included. It works in its own clone of the repository, so it never commits on the branch being worked on, and a run missed while the PC was off starts when it is back on. Its log is `data/cache/refresh.log` in that clone.
 
 Both run `python -m src.game_model.refresh --push`, which:
 
