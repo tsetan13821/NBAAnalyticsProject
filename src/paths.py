@@ -2,6 +2,9 @@
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# gzip with a fixed timestamp: the same data always gives the same bytes, so a refresh that changes
+# nothing doesn't show up as a change to commit
+GZIP = {'method': 'gzip', 'mtime': 0}
 
 CONFIG_PATH = PROJECT_ROOT / "config" / "config.yaml"
 

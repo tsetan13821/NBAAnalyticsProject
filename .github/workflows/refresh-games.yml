@@ -1,8 +1,12 @@
 name: refresh games
 
-# Keeps the game predictor live: downloads the latest results, schedule and injury report, re-predicts
-# the season in progress, and commits the data if it changed. A host that deploys on push rebuilds the
+# Keeps the injury report on the game predictor fresh: downloads the latest report, re-predicts the
+# season in progress, and commits the data if it changed. A host that deploys on push rebuilds the
 # serving database (src.export_db) from these files.
+#
+# Results and the schedule come from stats.nba.com, which refuses GitHub's servers, so this run skips
+# them (--injuries-only). A scheduled task on a home PC refreshes those (scripts/install-refresh-task.ps1);
+# src/game_model/refresh.py handles both publishing at once.
 #
 # GitHub runs scheduled workflows only from the default branch, can start them several minutes late,
 # and disables them after 60 days without activity in the repository.
@@ -10,7 +14,7 @@ name: refresh games
 on:
   schedule:
     # UTC. During the season (Eastern = UTC-5 in winter, UTC-4 from March):
-    #   15:17  ~10am ET  last night's results, today's first report
+    #   15:17  ~10am ET  the day's first report
     #   18:17  ~1pm ET   midday report
     #   22:17  ~5pm ET   the report most teams have submitted by
     #   23:47  ~6:45pm ET just before the early games
@@ -53,26 +57,10 @@ jobs:
           key: nba-cache-${{ github.run_id }}
           restore-keys: nba-cache-
 
-      # A download that fails (NBA.com is often slow, or blocks cloud servers) is skipped and listed in
-      # live_meta.json under fetch_failed; the predictions are rebuilt from the files already committed.
-      - name: Refresh the season in progress
-        run: python -m src.game_model.live
-
-      # The same build the API's Docker image runs: don't commit data it can't serve.
-      - name: Check the serving database builds
-        run: python -m src.export_db
-
-      - name: Commit changed data
+      # Refresh, check the serving database still builds, commit if the games changed, push. If the home
+      # PC's refresh pushed first, start again from its commit.
+      - name: Refresh and publish the injury report
         run: |
-          git add data/raw/games data/raw/injuries data/processed/game_predictions.csv \
-                  data/processed/game_players.csv data/processed/live_meta.json
-          # live_meta.json changes on every run (its timestamp); commit only when the games did
-          if git diff --cached --quiet -- . ':!data/processed/live_meta.json'; then
-            echo "No new results or statuses."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "data: refresh game predictions [skip ci]"
-          git pull --rebase
-          git push
+          python -m src.game_model.refresh --push --injuries-only

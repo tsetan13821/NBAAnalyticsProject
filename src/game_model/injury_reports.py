@@ -27,6 +27,7 @@ from nba_api.stats.static import teams as static_teams
 
 from src.game_model.seasons import configured_seasons
 from src.paths import (
+    GZIP,
     INJURIES_DIR,
     INJURY_PDF_CACHE,
     injuries_path,
@@ -365,7 +366,7 @@ def fetch_injury_reports(refresh: bool = False) -> None:
             if df is None:
                 print(f"  {path.name}: no reports")
                 continue
-            df.to_csv(path, index=False, compression='gzip')
+            df.to_csv(path, index=False, compression=GZIP)
             unmatched = df['PLAYER_ID'].isna().mean()
             print(f"  {path.name}: {len(df):,} statuses on {df['GAME_DATE'].nunique()} days, "
                   f"{unmatched:.1%} unmatched names ({(datetime.now() - started).seconds}s)")

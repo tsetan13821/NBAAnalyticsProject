@@ -28,7 +28,7 @@ from src.game_model.availability import (
 )
 from src.game_model.games import ELO_PER_POINT, build_games
 from src.game_model.seasons import configured_seasons
-from src.paths import GAME_FEATURES
+from src.paths import GAME_FEATURES, GZIP
 
 FEATURE_GROUPS: dict[str, list[str]] = {
     'strength': ['ELO_DIFF'],
@@ -85,7 +85,7 @@ def build_features() -> tuple[pd.DataFrame, dict[str, float]]:
 
 def main():
     df, play_rates = build_features()
-    df.to_csv(GAME_FEATURES, index=False, compression='gzip')
+    df.to_csv(GAME_FEATURES, index=False, compression=GZIP)
     print(f"Saved {len(df):,} games to {GAME_FEATURES}")
     print("Measured chance of playing by injury-report status:", play_rates)
 

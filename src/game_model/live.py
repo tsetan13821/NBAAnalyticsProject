@@ -156,7 +156,9 @@ def _reasons(season: str, statuses: pd.DataFrame, games: pd.DataFrame) -> pd.Dat
     return sides.merge(listed, on=['GAME_DATE', 'TEAM'])[columns]
 
 
-def build_live(fetch: bool = True) -> dict:
+def build_live(fetch: bool = True, stats: bool = True) -> dict:
+    """`stats=False` skips stats.nba.com (results and schedule), which refuses cloud servers; the injury
+    reports come from a different NBA server that doesn't."""
     seasons = configured_seasons()
     season = seasons.current
     if not season:
@@ -164,11 +166,14 @@ def build_live(fetch: bool = True) -> dict:
         return {}
     failed = []
     if fetch:
-        failed = [name for name, step in (
-            ('game logs', fetch_games),
-            ('schedule', lambda: fetch_schedule(season).to_csv(schedule_path(season), index=False)),
-            ('injury report archive', fetch_injury_reports),
-        ) if _fetch_step(name, step)]
+        steps = [('injury report archive', fetch_injury_reports)]
+        if stats:
+            steps = [
+                ('game logs', fetch_games),
+                ('schedule', lambda: fetch_schedule(season).to_csv(schedule_path(season), index=False)),
+                *steps,
+            ]
+        failed = [name for name, step in steps if _fetch_step(name, step)]
 
     now = now_eastern()
     today = now.date()

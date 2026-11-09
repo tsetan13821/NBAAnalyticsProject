@@ -17,7 +17,7 @@ import pandas as pd
 from nba_api.stats.endpoints import leaguegamefinder, playergamelogs
 
 from src.game_model.seasons import configured_seasons
-from src.paths import GAMES_DIR, player_games_path, team_games_path
+from src.paths import GAMES_DIR, GZIP, player_games_path, team_games_path
 
 TEAM_COLUMNS = [
     'SEASON_ID', 'TEAM_ID', 'TEAM_ABBREVIATION', 'GAME_ID', 'GAME_DATE', 'MATCHUP', 'WL', 'MIN',
@@ -93,7 +93,7 @@ def fetch_games(refresh: bool = False) -> None:
             continue
         if fetch is fetch_team_games:
             check_team_games(df, season)
-        df.to_csv(path, index=False, compression='gzip')
+        df.to_csv(path, index=False, compression=GZIP)
         print(f"  {path.name}: {len(df):,} rows, {df['GAME_ID'].nunique():,} games")
         time.sleep(REQUEST_PAUSE_S)
 
