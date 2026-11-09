@@ -6,7 +6,8 @@ on:
   pull_request:
 
 jobs:
-  pytest:
+  pipeline:
+    name: Pipeline and models
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,3 +26,51 @@ jobs:
       # Tests use the committed datasets and model only; they never call the NBA API.
       - name: Run tests
         run: pytest -q
+
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            backend/requirements*.txt
+
+      # The pipeline requirements are needed to build the database the API serves.
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r backend/requirements-dev.txt
+
+      - name: Build the serving database
+        run: python -m src.export_db
+
+      - name: Lint
+        working-directory: backend
+        run: ruff check .
+
+      - name: Run tests
+        working-directory: backend
+        run: pytest -q
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -f backend/Dockerfile -t nba-analytics-api .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name api -p 8000:8000 nba-analytics-api
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/api/v1/health && exit 0
+            sleep 1
+          done
+          docker logs api
+          exit 1

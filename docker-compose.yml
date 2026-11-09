@@ -1,0 +1,12 @@
+# Run the API locally in Docker:  docker compose up --build
+# Then open http://localhost:8000/docs
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      NBA_ALLOWED_ORIGINS: http://localhost:3000
+      NBA_CACHE_MAX_AGE: "3600"

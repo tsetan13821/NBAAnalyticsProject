@@ -41,6 +41,8 @@ NBAAnalyticsProject/
 │   ├── data_collection.py  # Script to ingest multi-season stats from NBA API
 │   ├── data_pipeline/      # Data pipeline scripts (standings fetch, MVP dataset build)
 │   └── models/             # Machine learning implementations (MVP, All-Star, Clustering, Next Game)
+├── backend/                # v2 FastAPI service (app/, tests/, Dockerfile, openapi.json)
+├── docs/ARCHITECTURE.md    # v2 design, data model, API and roadmap
 ├── streamlit_app/          # Streamlit UI dashboard
 │   ├── app.py              # Main dashboard entrypoint
 │   ├── pages/              # Dashboard pages (Player Stats, Clusters, Model Predictions)
@@ -94,12 +96,35 @@ The last pipeline step, `python -m src.export_db`, builds the read-only serving 
 streamlit run streamlit_app/app.py
 ```
 
-### 5. Run Tests
+### 5. Run the API (v2)
+Build the serving database once, then start the API from the `backend/` folder:
+```bash
+python -m src.export_db
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+Open http://localhost:8000/docs for interactive API documentation.
+
+Or run it in Docker without a local Python setup (the image builds the database itself):
+```bash
+docker compose up --build
+```
+
+### 6. Run Tests
 ```bash
 pip install -r requirements-dev.txt
 pytest
+
+# API tests and lint (needs the database from python -m src.export_db)
+cd backend
+pip install -r requirements-dev.txt
+ruff check .
+pytest
 ```
 Tests run on the committed datasets (no NBA API calls) and also run automatically on GitHub Actions for every push and pull request.
+
+If you change the API on purpose, regenerate its committed schema with `python -m scripts.export_openapi` from `backend/`.
 
 ---
 

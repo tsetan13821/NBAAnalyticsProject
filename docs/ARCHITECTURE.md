@@ -61,40 +61,86 @@ Built by `python -m src.export_db` (about 12 MB). Columns ending in `_pg` are pe
 
 Relocated teams (for example the Seattle SuperSonics) are stored under their current franchise (`OKC`), with the abbreviation of the time kept in `team_abbr_then`.
 
-## Backend API (planned)
+## Backend API
 
-All endpoints are read-only `GET` requests except the prediction.
+The API lives in `backend/`. Interactive documentation is served at `/docs`, and the full schema is committed as [`backend/openapi.json`](../backend/openapi.json). Every endpoint is a read-only `GET` except the prediction.
 
 | Endpoint | Purpose |
 | :--- | :--- |
-| `GET /api/v1/meta/seasons` | Season list and headline metrics |
-| `GET /api/v1/players?search=` | Player search |
-| `GET /api/v1/players/{id}` | Profile with season-by-season stats |
-| `GET /api/v1/players/{id}/similar?season=` | Similar players |
-| `GET /api/v1/players/compare?ids=&season=&group=` | Percentile comparison |
-| `GET /api/v1/mvp/accuracy` | Model results for all seasons |
-| `GET /api/v1/mvp/{season}` | MVP race for one season |
-| `GET /api/v1/teams`, `GET /api/v1/teams/{abbr}` | Franchise list and history |
-| `GET /api/v1/teams/{abbr}/form` | Current record and win % trend |
-| `POST /api/v1/games/predict` | Next-game win probability |
-| `GET /api/v1/health` | Health check |
+| `GET /api/v1/meta` | Season range, build time and headline model metrics |
+| `GET /api/v1/seasons` | Every season with its champion and MVP |
+| `GET /api/v1/health` | Health check (database schema version, build time) |
+| `GET /api/v1/players?q=&position_group=&season=&team=&limit=&offset=` | Paginated player search; ignores accents and case |
+| `GET /api/v1/players/{id}` | Profile: bio, career averages, season-by-season stats, MVP seasons |
+| `GET /api/v1/players/{id}/similar?season=` | Five most similar players in a season |
+| `GET /api/v1/players/compare?ids=&ids=&season=&peer_group=ALL\|POSITION` | Stats and percentiles for 2 to 4 players |
+| `GET /api/v1/mvp` | Model accuracy overall, by era and per season |
+| `GET /api/v1/mvp/{season}?limit=` | MVP race: ranked candidates with scores and stats |
+| `GET /api/v1/teams` | All 30 franchises with their latest record |
+| `GET /api/v1/teams/{abbr}` | Franchise history and championships |
+| `GET /api/v1/teams/{abbr}/roster?season=` | Players on a team in a season |
+| `GET /api/v1/teams/{abbr}/form?season=` | Game-by-game record and running win % (2020-21 onward) |
+| `POST /api/v1/games/predict` | Home win probability; omitted win % inputs default to the latest season's records |
+
+### Code layout
+
+```
+backend/app/
+├── main.py          # App factory: lifespan checks, CORS, cache headers, routers
+├── config.py        # Settings from environment variables
+├── db.py            # Read-only SQLite connection per request, schema version check
+├── routers/         # HTTP layer: parameters, validation, status codes
+├── services/        # Logic beyond a query: player comparison, game prediction, tree model
+├── repositories/    # Parameterized SQL, returns plain dicts
+└── schemas/         # Pydantic response and request models (generate the OpenAPI schema)
+```
+
+### Behaviour
+
+- **Startup checks.** The app refuses to start if the database is missing or was built with a different schema version, or if the model file can't be loaded.
+- **Read-only access.** Each request opens the database with `mode=ro&immutable=1`, so the API can never write to it, and SQLite skips locking.
+- **Caching.** Successful `GET` responses send `Cache-Control: public, max-age=…` because the data changes only when the pipeline reruns. Errors, predictions and the health check send `no-store`.
+- **Errors.** Unknown resources return `404` with `{"detail": "..."}`; invalid input returns FastAPI's standard `422` body.
+
+### Configuration
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `NBA_DB_PATH` | `backend/data/nba.db` | Serving database |
+| `NBA_MODEL_PATH` | `backend/data/next_game_model.json` | Exported next-game model |
+| `NBA_ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated CORS origins (the frontend) |
+| `NBA_CACHE_MAX_AGE` | `3600` | Seconds clients may cache `GET` responses |
+| `PORT` | `8000` | Port inside the Docker image |
+
+### Docker
+
+`backend/Dockerfile` has two stages. The first installs the pipeline requirements and runs `python -m src.export_db` on the committed data. The second starts from a clean `python:3.11-slim`, installs only FastAPI, Pydantic and Uvicorn, and copies in the app and the built database. Training libraries never reach the runtime image. The container runs as a non-root user and has a health check.
 
 ## Testing and CI
 
 - **Pipeline:** unit tests for helpers, integrity checks on the committed datasets, model regression guards (MVP accuracy, tier ordering, no look-ahead in game features).
 - **Export:** builds the database in a temp folder and checks foreign keys, MVP consistency, percentile bounds, game-log records against standings, and exported-model parity with XGBoost.
-- **Backend (planned):** endpoint tests with FastAPI's `TestClient`.
+- **Backend:** endpoint tests with FastAPI's `TestClient` against the real database, covering:
+  - search relevance, accent handling and pagination
+  - 404 and 422 cases
+  - prediction validation
+  - cache and CORS headers
+  - unit tests for the tree evaluator, and parity with XGBoost
+  - a snapshot test that fails if the API schema changes without `backend/openapi.json` being regenerated
 - **Frontend (planned):** type checking, linting, component tests (Vitest), end-to-end tests (Playwright) against the full stack in Docker Compose.
 
-GitHub Actions runs the suite on every push to `main` and every pull request.
+GitHub Actions runs three jobs on every push to `main` and every pull request:
+1. pipeline tests
+2. API lint (ruff) and tests, after building the database
+3. a Docker build with a health-check smoke test
 
 ## Roadmap
 
 | Phase | Scope | Status |
 | :--- | :--- | :--- |
 | 0. Foundations | Serving database export, official player bio data, this document | Done |
-| 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Next |
-| 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Planned |
+| 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
+| 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Next |
 | 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | Planned |
 | 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |

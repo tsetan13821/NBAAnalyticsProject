@@ -1,0 +1,17 @@
+# Only config/, src/, data/, saved_models/ and backend/ are copied into the image.
+.git
+.github
+.venv
+venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+.env
+backend/data
+backend/tests
+notebooks
+streamlit_app
+tests
+docs
+scripts
