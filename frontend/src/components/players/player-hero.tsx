@@ -5,6 +5,7 @@ import { PlayerPhoto } from "@/components/players/player-photo";
 import { TeamBadge } from "@/components/team-badge";
 import type { PlayerProfile } from "@/lib/api/client";
 import { height, ordinal, seasonSpan, shortDate } from "@/lib/format";
+import { teamHref } from "@/lib/teams";
 
 const POSITION_NAMES: Record<string, string> = { G: "Guard", F: "Forward", C: "Center" };
 
@@ -52,15 +53,23 @@ export function PlayerHero({ profile, rostersAsOf }: { profile: PlayerProfile; r
     <header className="mb-12 grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:items-end">
       <div className="order-2 md:order-1">
         <p className="eyebrow mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <TeamBadge team={current ?? latest} className={current ? undefined : "opacity-60"} />
+          <Link href={teamHref((current ?? latest).abbr)} aria-hidden="true" tabIndex={-1}>
+            <TeamBadge team={current ?? latest} className={current ? undefined : "opacity-60"} />
+          </Link>
           {current ? (
             <>
-              <span className="text-brand">{current.name}</span>
+              <Link href={teamHref(current.abbr)} className="text-brand hover:underline">
+                {current.name}
+              </Link>
               <span className="text-muted-foreground">· Roster as of {shortDate(rostersAsOf)}</span>
             </>
           ) : (
             <span className="text-muted-foreground">
-              Last played for the {latest.name}, {profile.last_season}
+              Last played for the{" "}
+              <Link href={teamHref(latest.abbr)} className="hover:text-foreground hover:underline">
+                {latest.name}
+              </Link>
+              , {profile.last_season}
             </span>
           )}
         </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { BarChart } from "echarts/charts";
-import { GridComponent, TooltipComponent } from "echarts/components";
+import { GridComponent, MarkLineComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { SVGRenderer } from "echarts/renderers";
 import { useEffect, useRef } from "react";
@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 // Register only what the app uses, so the bundle stays small.
-echarts.use([BarChart, GridComponent, TooltipComponent, SVGRenderer]);
+echarts.use([BarChart, GridComponent, MarkLineComponent, TooltipComponent, SVGRenderer]);
 
 export type EChartOption = echarts.EChartsCoreOption;
 

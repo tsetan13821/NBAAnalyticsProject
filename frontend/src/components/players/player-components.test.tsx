@@ -45,14 +45,14 @@ describe("PlayerHero", () => {
 
   it("shows today's team and when the roster was read", () => {
     render(<PlayerHero profile={profile()} rostersAsOf="2026-11-09" />);
-    expect(screen.getByText("Oklahoma City Thunder", { selector: "span.text-brand" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Oklahoma City Thunder" })).toHaveAttribute("href", "/teams/OKC");
     expect(screen.getByText("· Roster as of 9 Nov 2026")).toBeInTheDocument();
     expect(screen.queryByText(/Now with/)).not.toBeInTheDocument();
   });
 
   it("explains when the player has moved since the last season of stats", () => {
     render(<PlayerHero profile={profile({ current_team: PHI })} rostersAsOf="2026-11-09" />);
-    expect(screen.getByText("Philadelphia 76ers", { selector: "span.text-brand" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Philadelphia 76ers" })).toHaveAttribute("href", "/teams/PHI");
     expect(screen.getByText(/Now with the Philadelphia 76ers\. The numbers on this page run to 2024-25/)).toHaveTextContent(
       "when the player was with the Oklahoma City Thunder",
     );
@@ -60,7 +60,9 @@ describe("PlayerHero", () => {
 
   it("shows the last team for a player no longer on a roster", () => {
     render(<PlayerHero profile={profile({ current_team: null })} rostersAsOf="2026-11-09" />);
-    expect(screen.getByText("Last played for the Oklahoma City Thunder, 2024-25")).toBeInTheDocument();
+    const line = screen.getByText((_, el) => el?.tagName === "SPAN" && el.textContent === "Last played for the Oklahoma City Thunder, 2024-25");
+    expect(line).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Oklahoma City Thunder" })).toHaveAttribute("href", "/teams/OKC");
     expect(screen.queryByText(/Roster as of/)).not.toBeInTheDocument();
   });
 });
