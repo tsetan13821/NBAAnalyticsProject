@@ -1,170 +1,192 @@
-# 🏀 NBA Analytics & Machine Learning Dashboard
+# NBA Analytics
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-App-red?style=flat&logo=streamlit)
-![XGBoost](https://img.shields.io/badge/Machine%20Learning-XGBoost-orange)
-![Scikit-Learn](https://img.shields.io/badge/Clustering-K--Means-green)
+[![tests](https://github.com/tsetan13821/NBAAnalyticsProject/actions/workflows/tests.yml/badge.svg)](https://github.com/tsetan13821/NBAAnalyticsProject/actions/workflows/tests.yml)
+[![refresh games](https://github.com/tsetan13821/NBAAnalyticsProject/actions/workflows/refresh-games.yml/badge.svg)](https://github.com/tsetan13821/NBAAnalyticsProject/actions/workflows/refresh-games.yml)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 
-An end-to-end data science and machine learning platform focused on NBA player statistics, predictive awards forecasting, player playstyle clustering, and game outcome modeling.
+A full-stack NBA analytics site built on every regular season since 2000-01. It has two machine-learning models: one picks each season's MVP, the other predicts every game of the season in progress from the official injury report. Both are tested only on seasons they never saw.
 
-> 🏗️ **v2 in progress**: the dashboard is being rebuilt as a FastAPI + Next.js application. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and roadmap.
->
-> 📖 **Complete Documentation**: For an in-depth walkthrough of the data collection API endpoints, feature engineering math, era normalization rules, and machine learning architectures, see [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
+The site is a **Next.js** front end on a typed, read-only **FastAPI** service. The API serves a SQLite database that an offline **Python** pipeline builds from NBA.com data. The game predictions refresh themselves through the day.
 
----
+![The home page: the MVP model's record season by season](docs/images/home.png)
 
-## ✨ Features
+## What's on the site
 
-- **Automated Data Pipeline**: Ingests, cleans, and processes raw multi-season NBA statistics via official API wrappers (`Base` and `Advanced` endpoints).
-- **Machine Learning Models**:
-  - **MVP Prediction**: XGBoost model using Leave-One-Season-Out Cross Validation (LOOCV), picking the actual MVP in **19 of 26 seasons (73.1%)**.
-  - **All-Star Prediction**: Position-constrained, hand-weighted impact score that builds Eastern and Western conference rosters (6G / 6F / 3C).
-  - **Player Archetype Clustering**: Standardized composite scores assign each player-season a playstyle, and 1D K-Means splits each into tiers (`Scorer`, `Playmaker`, `Rebounder`, `Defensive Player`) and performance tiers (`Elite`, `Very Good`, `Average`).
-  - **Game Predictor** (v2): win probability and predicted margin for every game of the season in progress, from Elo, net rating, form, rest and travel, and the official NBA injury report, with each player weighted by what he is worth to his team. On a held-out season it called **69.4%** of winners (Elo alone 67.6%, better record 67.0%), and the web app lets you sit or play any player to see how the prediction moves.
-  - **Next Game Prediction** (Streamlit): XGBoost game outcome forecast from season-to-date overall, home and road win percentages (about as accurate as picking the team with the better record).
-- **Interactive Streamlit Dashboard**: Full visual analytics web application featuring per-game player comparisons, franchise history, live MVP model prediction runners, and clustering visualizations.
+| Page | What it shows |
+| :--- | :--- |
+| **MVP Race** | The model's pick against the real MVP for every season, and the full field of contenders. The model picked the actual MVP in **19 of 26 seasons**, and the winner was in its top 3 in 23. Each season was predicted by a model trained without it (leave-one-season-out). |
+| **Players** | Search every player since 2000 by name, position, team and season. Each profile has season-by-season stats, a career chart, and the five most similar players by playing style. |
+| **Compare** | Two to four players side by side in a season, each stat shown with its percentile among all players or the same position. |
+| **Games** | The coming week's games: each team's win chance, the predicted margin, and who the injury report says may miss it. Each game shows what drives the prediction, and you can sit or play any player to see how it moves. |
+| **Teams** | This season's standings, every champion since 2000-01, and a page per franchise with its record season by season, rosters, titles and career leaders. |
 
----
+| | |
+| :---: | :---: |
+| ![The MVP race for one season](docs/images/mvp-race.png) | ![A game prediction broken down by input](docs/images/game.png) |
+| MVP race | Why the model favours a team |
+| ![A franchise page](docs/images/franchise.png) | |
+| Franchise page | |
 
-## 📁 Repository Structure
+## The game predictor
 
+It predicts the home team's margin with a ridge regression, then turns the margin into a win chance (a normal distribution whose spread is fitted to real results). Its inputs:
+
+- **Team strength:** Elo ratings, net rating and recent form.
+- **Schedule:** rest, back-to-backs, travel distance and time zones.
+- **Player availability:** the official injury report, with each player weighted by what he is worth to his team. A fresh absence counts in full. A long one barely moves the line, because the team's recent results already reflect it.
+
+Every input is computed walking through the games in date order, so a prediction only ever uses what was known before tip-off.
+
+Results on 2025-26, a season it never saw (1,230 games):
+
+| Model | Winners called | Log loss |
+| :--- | ---: | ---: |
+| **This model** | **69.4%** | **0.581** |
+| Elo ratings alone | 67.6% | 0.607 |
+| Team with the better record | 67.0% | — |
+| Always the home team | 55.5% | — |
+
+The site also checks its calibration (does a 70% favourite win about 7 times in 10?). It keeps a running record of how the predictions, made before each game, have fared this season.
+
+## How it's built
+
+```mermaid
+flowchart LR
+    NBA[NBA.com stats<br/>and injury reports] --> P[Python pipeline<br/>pandas · scikit-learn · XGBoost]
+    P --> DB[(SQLite<br/>read-only)]
+    DB --> API[FastAPI<br/>typed JSON API]
+    API -- OpenAPI schema --> T[Generated<br/>TypeScript types]
+    API --> WEB[Next.js<br/>server components]
+    T --> WEB
 ```
-NBAAnalyticsProject/
-├── config/                 # Pipeline configuration files (config.yaml)
-├── data/
-│   ├── processed/          # Cleaned datasets (mvp_data.csv, all_stars_master.csv, etc.)
-│   └── raw/                # Ingested raw player statistics (nba_player_stats.csv)
-├── notebooks/              # Jupyter Notebooks for EDA and prototype testing
-├── saved_models/           # Serialized machine learning models (.pkl)
-├── src/
-│   ├── pipeline.py         # Rebuilds every dataset and model in order
-│   ├── paths.py / nba_reference.py / features.py  # Shared paths, reference data, feature helpers
-│   ├── data_collection.py  # Script to ingest multi-season stats from NBA API
-│   ├── data_pipeline/      # Data pipeline scripts (standings fetch, MVP dataset build)
-│   ├── models/             # Machine learning implementations (MVP, All-Star, Clustering, Next Game)
-│   └── game_model/         # v2 game predictor: game logs, injury reports, player value, training, live predictions
-├── backend/                # v2 FastAPI service (app/, tests/, Dockerfile, openapi.json)
-├── frontend/               # v2 Next.js web app (src/app routes, components, typed API client)
-├── docker-compose.yml      # Runs the API and web app together
-├── docs/ARCHITECTURE.md    # v2 design, data model, API, frontend and roadmap
-├── streamlit_app/          # Streamlit UI dashboard
-│   ├── app.py              # Main dashboard entrypoint
-│   ├── pages/              # Dashboard pages (Player Stats, Clusters, Model Predictions)
-│   └── utils/data.py       # Shared cached data loaders
-├── PROJECT_DOCUMENTATION.md # Detailed technical breakdown & architectural guide
-├── tests/                  # Pytest suite (helpers, data integrity, models, dashboard smoke tests)
-├── pyproject.toml          # Project metadata and pytest configuration
-├── requirements.txt        # Pinned runtime dependencies
-├── requirements-dev.txt    # Adds test dependencies
-└── README.md               # Project overview
+
+- **Training and serving are separate.** pandas, scikit-learn and XGBoost run only offline. The API needs only FastAPI, Pydantic and Python's built-in `sqlite3`. The game model is linear, so the API re-adds its stored coefficients in pure Python to answer what-ifs; tests check it matches the pipeline.
+- **One contract.** The API's OpenAPI schema is committed. The frontend's TypeScript types are generated from it, and CI fails if either drifts.
+- **Read-only data.** Everything the site shows is precomputed into one SQLite file. That makes the API stateless and easy to run anywhere, and responses are safe to cache.
+- **Tested.** About 280 tests in total, across the pipeline (data integrity, no look-ahead in the game model, the injury report parser), the API (endpoint behaviour against the real database) and the web app (components, URL state, chart options). GitHub Actions runs them, plus lint, type checks and a Docker Compose smoke test, on every pull request.
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) covers the design in depth: data model, API, pages, decisions and roadmap. [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) covers the original data pipeline and MVP model.
+
+## Keeping the predictions live
+
+Results and injury reports change through the day, so the game data refreshes itself on two machines.
+
+stats.nba.com, the source of results and the schedule, refuses cloud servers. The injury report PDFs are served from elsewhere and work from anywhere. So:
+
+- **GitHub Actions** ([`refresh-games.yml`](.github/workflows/refresh-games.yml)) refreshes the injury report five times a day, from the morning to before the late tip-offs (US Eastern).
+- **A scheduled task on a home PC** ([`scripts/install-refresh-task.ps1`](scripts/install-refresh-task.ps1)) refreshes everything, results included, three times a day. It works in its own clone of the repository, so it never touches work in progress. A run missed while the PC was off starts when it's back on.
+
+Both run `python -m src.game_model.refresh --push`. It checks the serving database still builds, and commits only when results or injury statuses changed (a new timestamp alone isn't a change). If the other machine pushed first, it starts again from that commit instead of merging generated files. A host that deploys on push picks up each update.
+
+To set up the home refresh on Windows (Python 3.11+, signed in to GitHub with git):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-refresh-task.ps1
+# Times are on this PC's clock; change them with -Times '20:00', '00:00', '05:00'
+# Remove it with -Remove
 ```
 
----
+Things to know:
 
-## 🚀 Quick Start Guide
+- GitHub can start scheduled runs late, so the site is fresh to within a few hours, not minutes.
+- Scheduled workflows run only from the default branch, and GitHub turns them off after 60 days without activity in the repository.
+- Pull before pushing to `main`, since both refreshes commit there.
+- Re-run the installer after `requirements.txt` changes. The task's log is `data\cache\refresh.log` in its clone (`%LOCALAPPDATA%\NBAAnalyticsRefresh\repo`).
 
-### 1. Clone the Repository
+## Run it locally
+
+### With Docker (easiest)
+
 ```bash
 git clone https://github.com/tsetan13821/NBAAnalyticsProject.git
 cd NBAAnalyticsProject
+docker compose up --build
 ```
 
-### 2. Set Up Virtual Environment & Dependencies
-```bash
-python -m venv venv
-# On Windows
-venv\Scripts\activate
-# On macOS/Linux
-source venv/bin/activate
+Then open the web app at http://localhost:3000, or the interactive API docs at http://localhost:8000/docs. The API image builds the database itself. If a port is taken, choose others: `WEB_PORT=3001 API_PORT=8001 docker compose up --build`.
 
+### Without Docker
+
+You need Python 3.11+ and Node.js 24. The processed data and models are committed, so you don't need to download anything.
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-```
+python -m src.export_db         # builds backend/data/nba.db
 
-### 3. Run Pipelines & ML Models
-The processed datasets and model are committed, so this step is optional. Run from the repository root:
-```bash
-# Rebuild every dataset and model from the cached raw data
-python -m src.pipeline
-
-# Also re-download raw player stats and game results from the NBA API
-python -m src.pipeline --fetch
-
-# Or run a single step, e.g. evaluate the MVP model via LOOCV
-python -m src.models.mvp_prediction
-```
-
-The last pipeline step, `python -m src.export_db`, builds the read-only serving database (`backend/data/nba.db`) used by the v2 API.
-
-To refresh just the season in progress and current rosters (a few NBA.com requests), then rebuild the database:
-```bash
-python -m src.data_pipeline.fetch_current_season
-python -m src.data_pipeline.fetch_player_bio
-python -m src.export_db
-```
-
-To refresh the game predictions (latest results, schedule and injury report), then rebuild the database:
-```bash
-python -m src.game_model.live
-python -m src.export_db
-```
-
-### 4. Launch Streamlit Web Application
-```bash
-streamlit run streamlit_app/app.py
-```
-
-### 5. Run the API (v2)
-Build the serving database once, then start the API from the `backend/` folder:
-```bash
-python -m src.export_db
+# The API, from backend/
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-Open http://localhost:8000/docs for interactive API documentation.
+uvicorn app.main:app --reload   # http://localhost:8000/docs
 
-### 6. Run the Web App (v2)
-With the API running, start the Next.js app from the `frontend/` folder (Node.js 24):
-```bash
+# The web app, from frontend/ (in a second terminal)
 cd frontend
 npm install
-npm run dev
+npm run dev                     # http://localhost:3000
 ```
-Open http://localhost:3000. The app reads the API address from `API_URL` (default `http://localhost:8000`); copy `.env.example` to `.env.local` to change it.
 
-### 7. Or Run Everything in Docker
-No local Python or Node setup needed. The API image builds the database itself.
+The web app finds the API through `API_URL` (default `http://localhost:8000`). Copy `frontend/.env.example` to `frontend/.env.local` to change it.
+
+### Refreshing the data
+
 ```bash
-docker compose up --build
-# Web app: http://localhost:3000    API docs: http://localhost:8000/docs
+python -m src.game_model.live           # latest results, schedule and injury report; re-predict the season
+python -m src.data_pipeline.fetch_current_season   # the season in progress: player stats and standings
+python -m src.data_pipeline.fetch_player_bio       # current rosters
+python -m src.export_db                 # then rebuild the database
 
-# If a port is already in use, choose other host ports
-WEB_PORT=3001 API_PORT=8001 docker compose up --build
+python -m src.pipeline                  # rebuild every dataset and model from the cached data
+python -m src.pipeline --fetch          # ... downloading everything from NBA.com again first
 ```
 
-### 8. Run Tests
+### Tests
+
 ```bash
 pip install -r requirements-dev.txt
-pytest
+pytest                                  # pipeline and models
 
-# API tests and lint (needs the database from python -m src.export_db)
-cd backend
+cd backend                              # API (needs the database)
 pip install -r requirements-dev.txt
-ruff check .
-pytest
+ruff check . && pytest
 
-# Web app: types, lint, unit tests
-cd ../frontend
-npm run typecheck
-npm run lint
-npm test
+cd ../frontend                          # web app
+npm run typecheck && npm run lint && npm test
 ```
-Tests run on the committed datasets (no NBA API calls) and also run automatically on GitHub Actions for every push and pull request.
 
-If you change the API on purpose, regenerate its committed schema with `python -m scripts.export_openapi` from `backend/`, then the frontend's types with `npm run gen:api` from `frontend/`.
+If you change the API on purpose, regenerate its committed schema with `python -m scripts.export_openapi` (from `backend/`). Then regenerate the frontend's types with `npm run gen:api` (from `frontend/`).
 
----
+## Repository layout
 
-## 📜 License
+```
+├── src/                  # Offline pipeline
+│   ├── pipeline.py       #   rebuilds every dataset and model in order
+│   ├── data_pipeline/    #   NBA.com downloads: season stats, standings, rosters
+│   ├── models/           #   MVP model, player archetypes, All-Star picks, the v1 next-game model
+│   ├── game_model/       #   game predictor: game logs, injury reports, player value, training, live refresh
+│   └── export_db.py      #   builds the read-only SQLite database the API serves
+├── backend/              # FastAPI service: routers, schemas, repositories, tests, openapi.json
+├── frontend/             # Next.js app: routes in src/app, components, generated API types
+├── scripts/              # The home PC's scheduled refresh (Windows), and research scripts
+├── data/                 # Raw and processed datasets (committed)
+├── saved_models/         # Trained models and their metrics
+├── tests/                # Pipeline tests
+├── docs/                 # Architecture and screenshots
+├── streamlit_app/        # The original Streamlit dashboard (v1)
+└── docker-compose.yml    # The API and web app together
+```
 
-This project is open-sourced under the terms of the included [LICENSE](LICENSE) file.
+## The original dashboard
+
+The project started as a Streamlit dashboard, which is still in `streamlit_app/`: `streamlit run streamlit_app/app.py`. It also has the player-archetype clusters and the All-Star roster picks, which the new site doesn't show yet.
+
+## Data
+
+Regular-season data from NBA.com, from 2000-01 to the season in progress. This is an independent project, not affiliated with or endorsed by the NBA.
+
+## License
+
+See [LICENSE](LICENSE).
