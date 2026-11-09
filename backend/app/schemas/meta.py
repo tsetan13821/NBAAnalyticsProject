@@ -5,15 +5,25 @@ from pydantic import BaseModel, Field
 from app.schemas.common import PlayerRef, Season, TeamRef
 
 
-class NextGameModelInfo(BaseModel):
+class GameModelInfo(BaseModel):
     train_first_season: Season
     train_last_season: Season
     train_games: int
     test_season: Season = Field(description="Held out: the model never saw these games while training")
     test_games: int
     accuracy: float
+    log_loss: float
     home_baseline: float = Field(description="Accuracy of always picking the home team")
     record_baseline: float = Field(description="Accuracy of picking the team with the better record")
+    elo_baseline: float = Field(description="Accuracy of Elo ratings alone")
+
+
+class GameSeasonInfo(BaseModel):
+    season: Season
+    as_of: str = Field(description="When the predictions were made (ISO, Eastern)")
+    games_played: int
+    correct: int = Field(description="Played games whose favourite won")
+    upcoming_games: int
 
 
 class MvpModelInfo(BaseModel):
@@ -31,7 +41,8 @@ class Meta(BaseModel):
     current_season_as_of: str | None = Field(description="Date (YYYY-MM-DD) the season-in-progress stats were fetched")
     rosters_as_of: str = Field(description="Date (YYYY-MM-DD) the current-team data was taken from NBA.com rosters")
     mvp_model: MvpModelInfo
-    next_game_model: NextGameModelInfo
+    game_model: GameModelInfo
+    game_season: GameSeasonInfo | None = Field(description="The game model on the season in progress")
 
 
 class SeasonInfo(BaseModel):

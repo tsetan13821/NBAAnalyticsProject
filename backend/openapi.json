@@ -1,6 +1,170 @@
 {
   "components": {
     "schemas": {
+      "AblationStep": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "added": {
+            "title": "Added",
+            "type": "string"
+          },
+          "brier": {
+            "title": "Brier",
+            "type": "number"
+          },
+          "log_loss": {
+            "title": "Log Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "accuracy",
+          "log_loss",
+          "brier",
+          "added"
+        ],
+        "title": "AblationStep",
+        "type": "object"
+      },
+      "Absence": {
+        "properties": {
+          "already_missing": {
+            "description": "He has missed most of the team's last ten games, so the team's recent results already reflect his absence and it barely moves the prediction",
+            "title": "Already Missing",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "player_id": {
+            "title": "Player Id",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "Out",
+              "Doubtful",
+              "Questionable",
+              "Probable",
+              "Available"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "team_abbr": {
+            "title": "Team Abbr",
+            "type": "string"
+          },
+          "value_lost": {
+            "description": "Player value (points of Game Score) the team expects to be without",
+            "title": "Value Lost",
+            "type": "number"
+          }
+        },
+        "required": [
+          "player_id",
+          "name",
+          "team_abbr",
+          "status",
+          "value_lost",
+          "already_missing"
+        ],
+        "title": "Absence",
+        "type": "object"
+      },
+      "Baselines": {
+        "properties": {
+          "better_record": {
+            "description": "Accuracy of picking the team with the better record so far",
+            "title": "Better Record",
+            "type": "number"
+          },
+          "elo": {
+            "$ref": "#/components/schemas/Scores"
+          },
+          "home_team": {
+            "description": "Accuracy of always picking the home team",
+            "title": "Home Team",
+            "type": "number"
+          }
+        },
+        "required": [
+          "home_team",
+          "better_record",
+          "elo"
+        ],
+        "title": "Baselines",
+        "type": "object"
+      },
+      "BreakdownItem": {
+        "properties": {
+          "key": {
+            "examples": [
+              "availability"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "examples": [
+              "Tonight's availability"
+            ],
+            "title": "Label",
+            "type": "string"
+          },
+          "points": {
+            "description": "Points this group adds to the home team's margin",
+            "title": "Points",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "points"
+        ],
+        "title": "BreakdownItem",
+        "type": "object"
+      },
+      "CalibrationBin": {
+        "properties": {
+          "actual": {
+            "description": "Share of these games the favourite won",
+            "title": "Actual",
+            "type": "number"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "description": "The favourite's predicted chance, from",
+            "title": "Low",
+            "type": "number"
+          },
+          "predicted": {
+            "title": "Predicted",
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "games",
+          "predicted",
+          "actual"
+        ],
+        "title": "CalibrationBin",
+        "type": "object"
+      },
       "CandidateStats": {
         "properties": {
           "ast_pg": {
@@ -180,6 +344,41 @@
         "title": "ComparedPlayer",
         "type": "object"
       },
+      "ConfidenceBin": {
+        "properties": {
+          "favorite_won": {
+            "title": "Favorite Won",
+            "type": "integer"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "description": "The favourite's predicted chance, from",
+            "title": "Low",
+            "type": "number"
+          },
+          "predicted": {
+            "description": "Average predicted chance of the favourite",
+            "title": "Predicted",
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "games",
+          "favorite_won",
+          "predicted"
+        ],
+        "title": "ConfidenceBin",
+        "type": "object"
+      },
       "EraAccuracy": {
         "properties": {
           "correct": {
@@ -224,6 +423,115 @@
         "title": "ErrorResponse",
         "type": "object"
       },
+      "Evaluation": {
+        "properties": {
+          "ablation": {
+            "description": "Input groups added one at a time",
+            "items": {
+              "$ref": "#/components/schemas/AblationStep"
+            },
+            "title": "Ablation",
+            "type": "array"
+          },
+          "baselines": {
+            "$ref": "#/components/schemas/Baselines"
+          },
+          "calibration": {
+            "items": {
+              "$ref": "#/components/schemas/CalibrationBin"
+            },
+            "title": "Calibration",
+            "type": "array"
+          },
+          "held_out": {
+            "$ref": "#/components/schemas/HeldOut"
+          },
+          "models": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Scores"
+            },
+            "description": "Alternatives scored on the same games",
+            "title": "Models",
+            "type": "object"
+          },
+          "test_games": {
+            "title": "Test Games",
+            "type": "integer"
+          },
+          "test_season": {
+            "title": "Test Season",
+            "type": "string"
+          },
+          "train_first_season": {
+            "title": "Train First Season",
+            "type": "string"
+          },
+          "train_games": {
+            "title": "Train Games",
+            "type": "integer"
+          },
+          "train_last_season": {
+            "title": "Train Last Season",
+            "type": "string"
+          },
+          "walk_forward": {
+            "items": {
+              "$ref": "#/components/schemas/WalkForwardSeason"
+            },
+            "title": "Walk Forward",
+            "type": "array"
+          }
+        },
+        "required": [
+          "train_first_season",
+          "train_last_season",
+          "train_games",
+          "test_season",
+          "test_games",
+          "held_out",
+          "baselines",
+          "models",
+          "ablation",
+          "calibration",
+          "walk_forward"
+        ],
+        "title": "Evaluation",
+        "type": "object"
+      },
+      "FeatureInfo": {
+        "properties": {
+          "coefficient": {
+            "description": "Points of margin per unit",
+            "title": "Coefficient",
+            "type": "number"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "group",
+          "label",
+          "description",
+          "coefficient"
+        ],
+        "title": "FeatureInfo",
+        "type": "object"
+      },
       "FormGame": {
         "properties": {
           "date": {
@@ -255,6 +563,556 @@
           "win_pct"
         ],
         "title": "FormGame",
+        "type": "object"
+      },
+      "GameDetail": {
+        "properties": {
+          "away": {
+            "$ref": "#/components/schemas/TeamSide"
+          },
+          "away_players": {
+            "items": {
+              "$ref": "#/components/schemas/GamePlayer"
+            },
+            "title": "Away Players",
+            "type": "array"
+          },
+          "breakdown": {
+            "description": "Sums to predicted_margin",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            },
+            "title": "Breakdown",
+            "type": "array"
+          },
+          "date": {
+            "description": "ISO date, US Eastern",
+            "title": "Date",
+            "type": "string"
+          },
+          "favorite": {
+            "title": "Favorite",
+            "type": "string"
+          },
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "home": {
+            "$ref": "#/components/schemas/TeamSide"
+          },
+          "home_players": {
+            "description": "Most valuable first",
+            "items": {
+              "$ref": "#/components/schemas/GamePlayer"
+            },
+            "title": "Home Players",
+            "type": "array"
+          },
+          "home_win_probability": {
+            "title": "Home Win Probability",
+            "type": "number"
+          },
+          "key_absences": {
+            "description": "Players listed Out, Doubtful or Questionable who are worth the most to their team, at most four",
+            "items": {
+              "$ref": "#/components/schemas/Absence"
+            },
+            "title": "Key Absences",
+            "type": "array"
+          },
+          "predicted_margin": {
+            "description": "Home team's predicted margin; negative favours the away team",
+            "title": "Predicted Margin",
+            "type": "number"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GameResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Final score, once played"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "spread": {
+            "description": "Standard deviation of the real margin around the prediction",
+            "title": "Spread",
+            "type": "number"
+          },
+          "tip_et": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tip-off, 'HH:MM' Eastern (upcoming games)",
+            "title": "Tip Et"
+          },
+          "what_if": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WhatIf"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "game_id",
+          "season",
+          "date",
+          "tip_et",
+          "home",
+          "away",
+          "home_win_probability",
+          "predicted_margin",
+          "favorite",
+          "result",
+          "key_absences",
+          "breakdown",
+          "spread",
+          "home_players",
+          "away_players",
+          "what_if"
+        ],
+        "title": "GameDetail",
+        "type": "object"
+      },
+      "GameModelDetails": {
+        "properties": {
+          "evaluation": {
+            "$ref": "#/components/schemas/Evaluation"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureInfo"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "intercept": {
+            "description": "Home edge with a normal crowd, points",
+            "title": "Intercept",
+            "type": "number"
+          },
+          "play_rates": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Share of listed players who played, by status",
+            "title": "Play Rates",
+            "type": "object"
+          },
+          "spread": {
+            "title": "Spread",
+            "type": "number"
+          },
+          "trained_on": {
+            "examples": [
+              "2019-20 to 2025-26"
+            ],
+            "title": "Trained On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trained_on",
+          "intercept",
+          "spread",
+          "play_rates",
+          "features",
+          "evaluation"
+        ],
+        "title": "GameModelDetails",
+        "type": "object"
+      },
+      "GameModelInfo": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "elo_baseline": {
+            "description": "Accuracy of Elo ratings alone",
+            "title": "Elo Baseline",
+            "type": "number"
+          },
+          "home_baseline": {
+            "description": "Accuracy of always picking the home team",
+            "title": "Home Baseline",
+            "type": "number"
+          },
+          "log_loss": {
+            "title": "Log Loss",
+            "type": "number"
+          },
+          "record_baseline": {
+            "description": "Accuracy of picking the team with the better record",
+            "title": "Record Baseline",
+            "type": "number"
+          },
+          "test_games": {
+            "title": "Test Games",
+            "type": "integer"
+          },
+          "test_season": {
+            "description": "Held out: the model never saw these games while training",
+            "title": "Test Season",
+            "type": "string"
+          },
+          "train_first_season": {
+            "title": "Train First Season",
+            "type": "string"
+          },
+          "train_games": {
+            "title": "Train Games",
+            "type": "integer"
+          },
+          "train_last_season": {
+            "title": "Train Last Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "train_first_season",
+          "train_last_season",
+          "train_games",
+          "test_season",
+          "test_games",
+          "accuracy",
+          "log_loss",
+          "home_baseline",
+          "record_baseline",
+          "elo_baseline"
+        ],
+        "title": "GameModelInfo",
+        "type": "object"
+      },
+      "GamePlayer": {
+        "properties": {
+          "chance": {
+            "description": "Chance of playing the prediction uses (after any what-if)",
+            "title": "Chance",
+            "type": "number"
+          },
+          "expected_minutes": {
+            "title": "Expected Minutes",
+            "type": "number"
+          },
+          "headshot_url": {
+            "title": "Headshot Url",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "participation": {
+            "description": "Share of the team's last ten games he played",
+            "title": "Participation",
+            "type": "number"
+          },
+          "played": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether he played, once the game is over",
+            "title": "Played"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Out",
+                  "Doubtful",
+                  "Questionable",
+                  "Probable",
+                  "Available"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Injury report status; NULL when not listed",
+            "title": "Status"
+          },
+          "status_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "report",
+                  "carried"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "'carried': no report covers this game yet, so his latest status is carried forward",
+            "title": "Status Source"
+          },
+          "team_abbr": {
+            "title": "Team Abbr",
+            "type": "string"
+          },
+          "value": {
+            "description": "Game Score above a replacement player at his usual minutes",
+            "title": "Value",
+            "type": "number"
+          },
+          "what_if": {
+            "anyOf": [
+              {
+                "enum": [
+                  "out",
+                  "in"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set when this request changed his chance",
+            "title": "What If"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "headshot_url",
+          "team_abbr",
+          "value",
+          "expected_minutes",
+          "participation",
+          "status",
+          "reason",
+          "status_source",
+          "chance",
+          "played",
+          "what_if"
+        ],
+        "title": "GamePlayer",
+        "type": "object"
+      },
+      "GameResult": {
+        "properties": {
+          "away_pts": {
+            "title": "Away Pts",
+            "type": "integer"
+          },
+          "correct": {
+            "description": "The model's favourite won",
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "home_pts": {
+            "title": "Home Pts",
+            "type": "integer"
+          },
+          "winner": {
+            "examples": [
+              "BOS"
+            ],
+            "title": "Winner",
+            "type": "string"
+          }
+        },
+        "required": [
+          "home_pts",
+          "away_pts",
+          "winner",
+          "correct"
+        ],
+        "title": "GameResult",
+        "type": "object"
+      },
+      "GameResults": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GameSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "record": {
+            "$ref": "#/components/schemas/TrackRecord"
+          },
+          "total": {
+            "description": "Total matching items, ignoring limit/offset",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "record"
+        ],
+        "title": "GameResults",
+        "type": "object"
+      },
+      "GameSeasonInfo": {
+        "properties": {
+          "as_of": {
+            "description": "When the predictions were made (ISO, Eastern)",
+            "title": "As Of",
+            "type": "string"
+          },
+          "correct": {
+            "description": "Played games whose favourite won",
+            "title": "Correct",
+            "type": "integer"
+          },
+          "games_played": {
+            "title": "Games Played",
+            "type": "integer"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "upcoming_games": {
+            "title": "Upcoming Games",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "season",
+          "as_of",
+          "games_played",
+          "correct",
+          "upcoming_games"
+        ],
+        "title": "GameSeasonInfo",
+        "type": "object"
+      },
+      "GameSummary": {
+        "properties": {
+          "away": {
+            "$ref": "#/components/schemas/TeamSide"
+          },
+          "date": {
+            "description": "ISO date, US Eastern",
+            "title": "Date",
+            "type": "string"
+          },
+          "favorite": {
+            "title": "Favorite",
+            "type": "string"
+          },
+          "game_id": {
+            "title": "Game Id",
+            "type": "string"
+          },
+          "home": {
+            "$ref": "#/components/schemas/TeamSide"
+          },
+          "home_win_probability": {
+            "title": "Home Win Probability",
+            "type": "number"
+          },
+          "key_absences": {
+            "description": "Players listed Out, Doubtful or Questionable who are worth the most to their team, at most four",
+            "items": {
+              "$ref": "#/components/schemas/Absence"
+            },
+            "title": "Key Absences",
+            "type": "array"
+          },
+          "predicted_margin": {
+            "description": "Home team's predicted margin; negative favours the away team",
+            "title": "Predicted Margin",
+            "type": "number"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GameResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Final score, once played"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "tip_et": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tip-off, 'HH:MM' Eastern (upcoming games)",
+            "title": "Tip Et"
+          }
+        },
+        "required": [
+          "game_id",
+          "season",
+          "date",
+          "tip_et",
+          "home",
+          "away",
+          "home_win_probability",
+          "predicted_margin",
+          "favorite",
+          "result",
+          "key_absences"
+        ],
+        "title": "GameSummary",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -294,6 +1152,35 @@
         "title": "Health",
         "type": "object"
       },
+      "HeldOut": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "brier": {
+            "title": "Brier",
+            "type": "number"
+          },
+          "log_loss": {
+            "title": "Log Loss",
+            "type": "number"
+          },
+          "margin_mae": {
+            "description": "Mean absolute error of the predicted margin, points",
+            "title": "Margin Mae",
+            "type": "number"
+          }
+        },
+        "required": [
+          "accuracy",
+          "log_loss",
+          "brier",
+          "margin_mae"
+        ],
+        "title": "HeldOut",
+        "type": "object"
+      },
       "Meta": {
         "properties": {
           "built_at": {
@@ -328,15 +1215,26 @@
             "title": "First Season",
             "type": "string"
           },
+          "game_model": {
+            "$ref": "#/components/schemas/GameModelInfo"
+          },
+          "game_season": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GameSeasonInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The game model on the season in progress"
+          },
           "last_season": {
             "title": "Last Season",
             "type": "string"
           },
           "mvp_model": {
             "$ref": "#/components/schemas/MvpModelInfo"
-          },
-          "next_game_model": {
-            "$ref": "#/components/schemas/NextGameModelInfo"
           },
           "rosters_as_of": {
             "description": "Date (YYYY-MM-DD) the current-team data was taken from NBA.com rosters",
@@ -352,7 +1250,8 @@
           "current_season_as_of",
           "rosters_as_of",
           "mvp_model",
-          "next_game_model"
+          "game_model",
+          "game_season"
         ],
         "title": "Meta",
         "type": "object"
@@ -605,57 +1504,6 @@
           "candidates"
         ],
         "title": "MvpSeasonResult",
-        "type": "object"
-      },
-      "NextGameModelInfo": {
-        "properties": {
-          "accuracy": {
-            "title": "Accuracy",
-            "type": "number"
-          },
-          "home_baseline": {
-            "description": "Accuracy of always picking the home team",
-            "title": "Home Baseline",
-            "type": "number"
-          },
-          "record_baseline": {
-            "description": "Accuracy of picking the team with the better record",
-            "title": "Record Baseline",
-            "type": "number"
-          },
-          "test_games": {
-            "title": "Test Games",
-            "type": "integer"
-          },
-          "test_season": {
-            "description": "Held out: the model never saw these games while training",
-            "title": "Test Season",
-            "type": "string"
-          },
-          "train_first_season": {
-            "title": "Train First Season",
-            "type": "string"
-          },
-          "train_games": {
-            "title": "Train Games",
-            "type": "integer"
-          },
-          "train_last_season": {
-            "title": "Train Last Season",
-            "type": "string"
-          }
-        },
-        "required": [
-          "train_first_season",
-          "train_last_season",
-          "train_games",
-          "test_season",
-          "test_games",
-          "accuracy",
-          "home_baseline",
-          "record_baseline"
-        ],
-        "title": "NextGameModelInfo",
         "type": "object"
       },
       "Page_PlayerSummary_": {
@@ -1205,156 +2053,6 @@
         "title": "PlayerSummary",
         "type": "object"
       },
-      "Prediction": {
-        "properties": {
-          "away_team": {
-            "$ref": "#/components/schemas/TeamRef"
-          },
-          "away_win_probability": {
-            "title": "Away Win Probability",
-            "type": "number"
-          },
-          "favorite": {
-            "title": "Favorite",
-            "type": "string"
-          },
-          "home_team": {
-            "$ref": "#/components/schemas/TeamRef"
-          },
-          "home_win_probability": {
-            "title": "Home Win Probability",
-            "type": "number"
-          },
-          "inputs": {
-            "$ref": "#/components/schemas/PredictionInputs"
-          }
-        },
-        "required": [
-          "home_team",
-          "away_team",
-          "inputs",
-          "home_win_probability",
-          "away_win_probability",
-          "favorite"
-        ],
-        "title": "Prediction",
-        "type": "object"
-      },
-      "PredictionInputs": {
-        "properties": {
-          "away_road_win_pct": {
-            "title": "Away Road Win Pct",
-            "type": "number"
-          },
-          "away_win_pct": {
-            "title": "Away Win Pct",
-            "type": "number"
-          },
-          "defaults_from_season": {
-            "description": "Season whose final records filled any omitted inputs",
-            "title": "Defaults From Season",
-            "type": "string"
-          },
-          "home_home_win_pct": {
-            "title": "Home Home Win Pct",
-            "type": "number"
-          },
-          "home_win_pct": {
-            "title": "Home Win Pct",
-            "type": "number"
-          }
-        },
-        "required": [
-          "home_win_pct",
-          "home_home_win_pct",
-          "away_win_pct",
-          "away_road_win_pct",
-          "defaults_from_season"
-        ],
-        "title": "PredictionInputs",
-        "type": "object"
-      },
-      "PredictionRequest": {
-        "description": "Predict a game. Any win % left out defaults to the team's record in the latest season.",
-        "properties": {
-          "away_road_win_pct": {
-            "anyOf": [
-              {
-                "maximum": 1.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Away Road Win Pct"
-          },
-          "away_team": {
-            "examples": [
-              "DAL"
-            ],
-            "maxLength": 3,
-            "minLength": 2,
-            "title": "Away Team",
-            "type": "string"
-          },
-          "away_win_pct": {
-            "anyOf": [
-              {
-                "maximum": 1.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Away Win Pct"
-          },
-          "home_home_win_pct": {
-            "anyOf": [
-              {
-                "maximum": 1.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Home Home Win Pct"
-          },
-          "home_team": {
-            "examples": [
-              "BOS"
-            ],
-            "maxLength": 3,
-            "minLength": 2,
-            "title": "Home Team",
-            "type": "string"
-          },
-          "home_win_pct": {
-            "anyOf": [
-              {
-                "maximum": 1.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Home Win Pct"
-          }
-        },
-        "required": [
-          "home_team",
-          "away_team"
-        ],
-        "title": "PredictionRequest",
-        "type": "object"
-      },
       "Roster": {
         "properties": {
           "players": {
@@ -1455,6 +2153,29 @@
           "tier"
         ],
         "title": "RosterPlayer",
+        "type": "object"
+      },
+      "Scores": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "brier": {
+            "title": "Brier",
+            "type": "number"
+          },
+          "log_loss": {
+            "title": "Log Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "accuracy",
+          "log_loss",
+          "brier"
+        ],
+        "title": "Scores",
         "type": "object"
       },
       "SeasonInfo": {
@@ -1921,6 +2642,35 @@
         "title": "TeamSeason",
         "type": "object"
       },
+      "TeamSide": {
+        "properties": {
+          "elo": {
+            "description": "Elo rating before the game (league average 1500)",
+            "title": "Elo",
+            "type": "number"
+          },
+          "losses": {
+            "title": "Losses",
+            "type": "integer"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamRef"
+          },
+          "wins": {
+            "description": "Record before the game",
+            "title": "Wins",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team",
+          "wins",
+          "losses",
+          "elo"
+        ],
+        "title": "TeamSide",
+        "type": "object"
+      },
       "TeamSummary": {
         "properties": {
           "abbr": {
@@ -1986,6 +2736,147 @@
         "title": "TeamSummary",
         "type": "object"
       },
+      "TrackRecord": {
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "brier": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brier"
+          },
+          "by_confidence": {
+            "items": {
+              "$ref": "#/components/schemas/ConfidenceBin"
+            },
+            "title": "By Confidence",
+            "type": "array"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "integer"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "home_team_won": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Share of games the home team won (a baseline)",
+            "title": "Home Team Won"
+          },
+          "log_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Loss"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          }
+        },
+        "required": [
+          "season",
+          "games",
+          "correct",
+          "accuracy",
+          "log_loss",
+          "brier",
+          "home_team_won",
+          "by_confidence"
+        ],
+        "title": "TrackRecord",
+        "type": "object"
+      },
+      "UpcomingGames": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the predictions were made (ISO, Eastern)",
+            "title": "As Of"
+          },
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/GameSummary"
+            },
+            "title": "Games",
+            "type": "array"
+          },
+          "injury_report": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Time of the injury report they use (ISO, Eastern)",
+            "title": "Injury Report"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          }
+        },
+        "required": [
+          "season",
+          "as_of",
+          "injury_report",
+          "games"
+        ],
+        "title": "UpcomingGames",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -2025,39 +2916,291 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WalkForwardSeason": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "baselines": {
+            "$ref": "#/components/schemas/Baselines"
+          },
+          "brier": {
+            "title": "Brier",
+            "type": "number"
+          },
+          "log_loss": {
+            "title": "Log Loss",
+            "type": "number"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          },
+          "test_games": {
+            "title": "Test Games",
+            "type": "integer"
+          },
+          "train_games": {
+            "title": "Train Games",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accuracy",
+          "log_loss",
+          "brier",
+          "season",
+          "train_games",
+          "test_games",
+          "baselines"
+        ],
+        "title": "WalkForwardSeason",
+        "type": "object"
+      },
+      "WhatIf": {
+        "properties": {
+          "base_home_win_probability": {
+            "description": "Before the changes",
+            "title": "Base Home Win Probability",
+            "type": "number"
+          },
+          "base_predicted_margin": {
+            "title": "Base Predicted Margin",
+            "type": "number"
+          },
+          "in": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "In",
+            "type": "array"
+          },
+          "out": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Out",
+            "type": "array"
+          }
+        },
+        "required": [
+          "out",
+          "in",
+          "base_home_win_probability",
+          "base_predicted_margin"
+        ],
+        "title": "WhatIf",
+        "type": "object"
       }
     }
   },
   "info": {
-    "description": "\nRead-only API over 26 NBA seasons (2000-01 to 2025-26) of player and team data, plus model output:\nleave-one-season-out MVP predictions, player archetypes, and a next-game win-probability model.\n\nCounting stats ending in `_pg` are per-game averages; fields ending in `_pct` are fractions (0.512 = 51.2%).\n",
+    "description": "\nRead-only API over 26 NBA seasons (2000-01 to 2025-26) of player and team data, plus model output:\nleave-one-season-out MVP predictions, player archetypes, and game predictions for the season in\nprogress that account for each team's injury report (with what-if changes to who plays).\n\nCounting stats ending in `_pg` are per-game averages; fields ending in `_pct` are fractions (0.512 = 51.2%).\n",
     "title": "NBA Analytics API",
     "version": "1.0.0"
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/v1/games/predict": {
-      "post": {
-        "operationId": "predict_game_api_v1_games_predict_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PredictionRequest"
-              }
-            }
-          },
-          "required": true
-        },
+    "/api/v1/games/model": {
+      "get": {
+        "operationId": "game_model_api_v1_games_model_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Prediction"
+                  "$ref": "#/components/schemas/GameModelDetails"
                 }
               }
             },
             "description": "Successful Response"
+          }
+        },
+        "summary": "The game model's inputs and evaluation",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/results": {
+      "get": {
+        "operationId": "game_results_api_v1_games_results_get",
+        "parameters": [
+          {
+            "description": "Only this team's games",
+            "in": "query",
+            "name": "team",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 3,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this team's games",
+              "title": "Team"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameResults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "This season's games, as predicted beforehand",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/upcoming": {
+      "get": {
+        "operationId": "upcoming_games_api_v1_games_upcoming_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpcomingGames"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Predictions for the coming week",
+        "tags": [
+          "games"
+        ]
+      }
+    },
+    "/api/v1/games/{game_id}": {
+      "get": {
+        "operationId": "get_game_api_v1_games__game_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "examples": [
+                "0022600150"
+              ],
+              "pattern": "^\\d{10}$",
+              "title": "Game Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "What if these players sit out (repeat the parameter)",
+            "in": "query",
+            "name": "out",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "What if these players sit out (repeat the parameter)",
+              "title": "Out"
+            }
+          },
+          {
+            "description": "What if these players play (repeat the parameter)",
+            "in": "query",
+            "name": "in",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "What if these players play (repeat the parameter)",
+              "title": "In"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Impossible request"
           },
           "404": {
             "content": {
@@ -2080,7 +3223,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Predict a game's winner",
+        "summary": "One game: prediction, why, and who is available",
         "tags": [
           "games"
         ]
