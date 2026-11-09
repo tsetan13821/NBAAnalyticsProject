@@ -16,11 +16,16 @@ def test_meta(get_json):
     assert meta["first_season"] == "2000-01"
     assert meta["mvp_model"]["seasons"] == 26
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["rosters_as_of"])
-    model = meta["next_game_model"]
-    assert 0.5 < model["accuracy"] < 1
+    model = meta["game_model"]
+    assert model["record_baseline"] < model["accuracy"] < 1
+    assert model["elo_baseline"] < model["accuracy"]
     assert model["test_season"] == "2025-26"
-    assert (model["train_first_season"], model["train_last_season"]) == ("2020-21", "2024-25")
+    assert (model["train_first_season"], model["train_last_season"]) == ("2019-20", "2024-25")
     assert model["train_games"] > 4 * model["test_games"]
+    live = meta["game_season"]
+    if live:
+        assert live["season"] == meta["current_season"]
+        assert 0 <= live["correct"] <= live["games_played"]
 
 
 def test_meta_separates_completed_and_current_seasons(get_json):
@@ -66,8 +71,8 @@ def test_unknown_route_is_404(client):
 def test_cors_allows_configured_origin(client, settings):
     origin = settings.allowed_origins[0]
     response = client.options(
-        "/api/v1/games/predict",
-        headers={"Origin": origin, "Access-Control-Request-Method": "POST"},
+        "/api/v1/games/upcoming",
+        headers={"Origin": origin, "Access-Control-Request-Method": "GET"},
     )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == origin

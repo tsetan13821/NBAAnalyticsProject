@@ -11,15 +11,15 @@ from app.main import create_app
 @pytest.fixture(scope="session")
 def settings():
     settings = replace(get_settings(), allowed_origins=("http://localhost:3000",), cache_max_age=600)
-    for path in (settings.db_path, settings.model_path):
-        if not path.exists():
-            pytest.fail(f"{path} is missing. Build it from the repo root with: python -m src.export_db", pytrace=False)
+    if not settings.db_path.exists():
+        path = settings.db_path
+        pytest.fail(f"{path} is missing. Build it from the repo root with: python -m src.export_db", pytrace=False)
     return settings
 
 
 @pytest.fixture(scope="session")
 def client(settings):
-    # The context manager runs the lifespan, which loads the database metadata and the model.
+    # The context manager runs the lifespan, which loads the database metadata and the game model.
     with TestClient(create_app(settings)) as client:
         yield client
 

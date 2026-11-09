@@ -9,15 +9,11 @@ from app.schemas.meta import Health, Meta, SeasonInfo
 router = APIRouter(tags=["meta"])
 
 
-def _season_from_id(season_id: int) -> str:
-    start = int(str(season_id)[-4:])
-    return f"{start}-{str(start + 1)[-2:]}"
-
-
 @router.get("/meta", response_model=Meta, summary="Dataset range and headline model metrics")
 def get_meta(request: Request):
     meta = request.app.state.db_meta
-    next_game = json.loads(meta["next_game_metrics"])
+    game = json.loads(meta["game_model_metrics"])
+    live = json.loads(meta["game_live"] or "{}")
     return {
         "first_season": meta["first_season"],
         "last_season": meta["last_season"],
@@ -26,16 +22,19 @@ def get_meta(request: Request):
         "current_season": meta["current_season"] or None,
         "current_season_as_of": meta["current_season_as_of"] or None,
         "mvp_model": {"correct": int(meta["mvp_correct"]), "seasons": int(meta["mvp_seasons"])},
-        "next_game_model": {
-            "train_first_season": _season_from_id(next_game["train_first_season_id"]),
-            "train_last_season": _season_from_id(next_game["test_season_id"] - 1),
-            "train_games": next_game["train_games"],
-            "test_season": _season_from_id(next_game["test_season_id"]),
-            "test_games": next_game["test_games"],
-            "accuracy": next_game["accuracy"],
-            "home_baseline": next_game["home_baseline"],
-            "record_baseline": next_game["record_baseline"],
+        "game_model": {
+            **{k: game[k] for k in ("train_first_season", "train_last_season", "train_games", "test_season",
+                                    "test_games")},
+            "accuracy": game["held_out"]["accuracy"],
+            "log_loss": game["held_out"]["log_loss"],
+            "home_baseline": game["baselines"]["home_team"],
+            "record_baseline": game["baselines"]["better_record"],
+            "elo_baseline": game["baselines"]["elo"]["accuracy"],
         },
+        "game_season": {
+            "season": live["season"], "as_of": live["as_of"], "games_played": live["games_played"],
+            "correct": live["correct_so_far"], "upcoming_games": live["upcoming_games"],
+        } if live else None,
     }
 
 
