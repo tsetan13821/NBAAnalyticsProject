@@ -15,21 +15,19 @@ flowchart LR
         PKL --> E
     end
     E --> DB[(backend/data/nba.db<br/>read-only SQLite)]
-    E --> J[backend/data/next_game_model.json]
 
     subgraph Online["Online"]
         FE[Next.js frontend] -- "/api/v1/* (JSON)" --> BE[FastAPI backend]
         BE --> DB
-        BE --> J
     end
     Browser --> FE
 ```
 
 | Layer | Technology | Responsibility |
 | :--- | :--- | :--- |
-| Pipeline | Python, pandas, scikit-learn, XGBoost, `nba_api` | Fetch data, clean it, train and evaluate models, export serving artifacts |
-| Serving data | SQLite (`nba.db`), JSON model file | Everything the API needs, precomputed |
-| Backend | FastAPI, Pydantic | Typed, read-only JSON API; live next-game predictions |
+| Pipeline | Python, pandas, scikit-learn, XGBoost, `nba_api`, pdfplumber | Fetch data and injury reports, clean them, train and evaluate models, export serving artifacts |
+| Serving data | SQLite (`nba.db`) | Everything the API needs, precomputed, including the game model's coefficients |
+| Backend | FastAPI, Pydantic | Typed, read-only JSON API; what-if game predictions |
 | Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui, ECharts | Pages and interactive charts; API types generated from the OpenAPI schema |
 
 Hosting is deliberately undecided. Everything is configured through environment variables and runs in Docker, so the same build can move between hosts.
@@ -37,13 +35,13 @@ Hosting is deliberately undecided. Everything is configured through environment 
 ## Design principles
 
 1. **Precompute everything that doesn't depend on user input.** MVP predictions, percentiles and similar players change only when the pipeline reruns, so they are computed once at build time instead of on every request.
-2. **Keep training and serving dependencies separate.** pandas, scikit-learn and XGBoost run only offline. The API needs only FastAPI, Pydantic and Python's built-in `sqlite3`. The XGBoost model is exported as plain JSON trees and evaluated in pure Python, which keeps the deployed bundle small and starts quickly. A test checks the export matches XGBoost's predictions.
+2. **Keep training and serving dependencies separate.** pandas, scikit-learn and XGBoost run only offline. The API needs only FastAPI, Pydantic and Python's built-in `sqlite3`. The game model is linear, so the API re-adds its coefficients (stored in the database) in pure Python to answer what-ifs; tests check the API reproduces the pipeline's predictions.
 3. **Fail at build time, not at request time.** The database schema (`src/db_schema.sql`) declares primary keys, foreign keys and `CHECK` constraints. The export validates every foreign key and writes to a temporary file, so a broken build never replaces a working database.
 4. **One contract between frontend and backend.** Pydantic schemas generate the OpenAPI document, and the frontend's TypeScript types are generated from it. A breaking API change shows up as a type error in CI.
 
 ## Data model
 
-Built by `python -m src.export_db` (about 12 MB). Columns ending in `_pg` are per-game averages; `*_pct` columns are fractions.
+Built by `python -m src.export_db` (about 14 MB). Columns ending in `_pg` are per-game averages; `*_pct` columns are fractions.
 
 | Table | Rows (approx.) | Contents |
 | :--- | ---: | :--- |
@@ -57,7 +55,9 @@ Built by `python -m src.export_db` (about 12 MB). Columns ending in `_pg` are pe
 | `mvp_candidates` | 285 | Leave-one-season-out model score and rank for every MVP candidate |
 | `mvp_seasons` | 26 | Predicted vs actual MVP per season, era, where the real MVP ranked |
 | `team_game_log` | 14,500 | Each team's game-by-game results and running record (2020-21 onward) |
-| `meta` | — | Build time, first and last completed season, the season in progress and when it was fetched, headline model metrics, date the rosters were read |
+| `game_predictions` | 1,230 a season | The season in progress: every game played so far (as predicted before it) and the coming week, with the model's inputs as JSON |
+| `game_players` | 30 per game | Every rostered player in those games: value, usual minutes, injury status, reason and chance of playing |
+| `meta` | — | Build time, first and last completed season, the season in progress and when it was fetched, the MVP model's record, the game model (coefficients, spread, play rates), its evaluation and live status, date the rosters were read |
 
 **The season in progress.** The models need finished seasons with known winners, so they only ever see the completed seasons in `config.yaml` (`start_season` to `end_season`). The season under way (`current_season`) is fetched separately by `src/data_pipeline/fetch_current_season.py` into `data/raw/current_season_*.csv`: every player who has played at least one game (the usual 20-game minimum would leave nobody early on) and the standings so far. `export_db` merges it into the player and team tables and marks it `in_progress`; it gets no MVP predictions, archetypes or similar players. The API returns `in_progress` on every season it reports, and `meta.last_season` stays the last completed season. Re-run the script, then `python -m src.export_db`, to bring it up to date. When the season ends, move it to `end_season`, set the next one as `current_season`, and rerun `python -m src.pipeline --fetch`.
 
@@ -65,9 +65,31 @@ Built by `python -m src.export_db` (about 12 MB). Columns ending in `_pg` are pe
 
 Relocated teams (for example the Seattle SuperSonics) are stored under their current franchise (`OKC`), with the abbreviation of the time kept in `team_abbr_then`.
 
+## Game predictor
+
+`src/game_model/` predicts every game of the season in progress: the home team's margin and win chance, from team strength, form, rest and travel, and the official injury report, with each player weighted by what he is worth to his team.
+
+| Module | Writes | What it does |
+| :--- | :--- | :--- |
+| `fetch_games` | `data/raw/games/{team,player}_games_<season>.csv.gz` | Team and player game logs from NBA.com (2015-16 onward for teams, 2017-18 for players) |
+| `schedule` | `data/raw/games/schedule_<season>.csv` | The season's schedule, for upcoming games |
+| `injury_reports` | `data/raw/injuries/injuries_<season>.csv.gz` | The league's injury report PDFs (2019-20 onward), parsed with pdfplumber and matched to player ids; the PDFs are cached in `data/cache/` and not committed |
+| `games` | — | Elo ratings, net rating, form, rest, back-to-backs, travel and time zones before every game |
+| `availability` | — | Player value (Game Score per minute above replacement, times usual minutes) and how much of it each team fields: at full strength, lately, and expected tonight |
+| `features`, `train` | `saved_models/game_model.json`, `game_model_metrics.json` | Ridge regression on the margin; held-out season, walk-forward, baselines, ablation and calibration |
+| `live` | `data/processed/game_predictions.csv`, `game_players.csv`, `live_meta.json` | The season in progress, from the latest results and injury report, through the same code as training |
+
+Every input is computed walking through the games in date order, so a prediction only ever uses what was known before tip-off; upcoming games go through the same code with no result. The model's injury input is the player value a team expects to field tonight minus what it has fielded in its last ten games, so a long absence (already in the team's results) barely moves the line and a fresh one counts in full. The chance of playing for each report status is measured on rotation players in the training seasons.
+
+**Refreshing.** Results and the injury report change through the day. `python -m src.game_model.live` downloads the latest games, schedule and report and re-predicts the season; `python -m src.export_db` then rebuilds the database. `--no-fetch` reuses what is on disk without touching the network. A download that fails is reported (and listed under `fetch_failed` in `live_meta.json`), and the run carries on with the files on disk.
+
+The GitHub Actions workflow `.github/workflows/refresh-games.yml` runs the same refresh five times a day: the morning after the games, midday, around the 5 PM report, before the early tip-offs and before the late ones. It commits the changed data files as `github-actions[bot]` (with `[skip ci]`), and a host that deploys on push picks them up. The injury report PDFs are kept between runs with `actions/cache`. GitHub can start scheduled runs late and only runs them from the default branch, so the site is fresh to within a few hours, not minutes. A worker beside the API, writing to a separate live database, would close that gap; it depends on where the site is hosted.
+
+Injury statuses are decided per team. Reports come every 15 minutes in 2026-27. Where the latest report lists the team for that game, its statuses are used. Otherwise the Out and Doubtful players from the team's most recent listing are carried forward. This covers games beyond the latest report, and teams whose entry still reads NOT YET SUBMITTED. A team with nobody injured isn't in the report at all, so nothing is carried if it has played since its last listing.
+
 ## Backend API
 
-The API lives in `backend/`. Interactive documentation is served at `/docs`, and the full schema is committed as [`backend/openapi.json`](../backend/openapi.json). Every endpoint is a read-only `GET` except the prediction.
+The API lives in `backend/`. Interactive documentation is served at `/docs`, and the full schema is committed as [`backend/openapi.json`](../backend/openapi.json). Every endpoint is a read-only `GET`.
 
 | Endpoint | Purpose |
 | :--- | :--- |
@@ -84,7 +106,10 @@ The API lives in `backend/`. Interactive documentation is served at `/docs`, and
 | `GET /api/v1/teams/{abbr}` | Franchise history and championships |
 | `GET /api/v1/teams/{abbr}/roster?season=` | Players on a team in a season |
 | `GET /api/v1/teams/{abbr}/form?season=` | Game-by-game record and running win % (2020-21 onward) |
-| `POST /api/v1/games/predict` | Home win probability; omitted win % inputs default to the latest season's records |
+| `GET /api/v1/games/upcoming` | Predictions for the coming week, with key absences and the injury report's time |
+| `GET /api/v1/games/results?team=&limit=&offset=` | Games played this season as predicted beforehand, newest first, with the track record (accuracy, log loss, confidence bins) |
+| `GET /api/v1/games/{game_id}?out=&in=` | One game: prediction, its breakdown in points per input group, and both rosters; `out`/`in` force players out of or into the game (what-if) |
+| `GET /api/v1/games/model` | The game model's inputs and weights, injury play rates, and its full evaluation |
 
 ### Code layout
 
@@ -94,24 +119,23 @@ backend/app/
 ├── config.py        # Settings from environment variables
 ├── db.py            # Read-only SQLite connection per request, schema version check
 ├── routers/         # HTTP layer: parameters, validation, status codes
-├── services/        # Logic beyond a query: player comparison, game prediction, tree model
+├── services/        # Logic beyond a query: player comparison, game what-ifs, track record
 ├── repositories/    # Parameterized SQL, returns plain dicts
 └── schemas/         # Pydantic response and request models (generate the OpenAPI schema)
 ```
 
 ### Behaviour
 
-- **Startup checks.** The app refuses to start if the database is missing or was built with a different schema version, or if the model file can't be loaded.
+- **Startup checks.** The app refuses to start if the database is missing or was built with a different schema version, or if the game model stored in it can't be loaded.
 - **Read-only access.** Each request opens the database with `mode=ro&immutable=1`, so the API can never write to it, and SQLite skips locking.
-- **Caching.** Successful `GET` responses send `Cache-Control: public, max-age=…` because the data changes only when the pipeline reruns. Errors, predictions and the health check send `no-store`.
-- **Errors.** Unknown resources return `404` with `{"detail": "..."}`; invalid input returns FastAPI's standard `422` body.
+- **Caching.** Successful `GET` responses send `Cache-Control: public, max-age=…` because the data changes only when the pipeline reruns. Errors and the health check send `no-store`. What-ifs are `GET`s too, so each combination is cacheable.
+- **Errors.** Unknown resources return `404` with `{"detail": "..."}`; malformed input returns FastAPI's standard `422` body; a what-if naming a player who isn't in the game, or the same player both out and in, returns `400`.
 
 ### Configuration
 
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
 | `NBA_DB_PATH` | `backend/data/nba.db` | Serving database |
-| `NBA_MODEL_PATH` | `backend/data/next_game_model.json` | Exported next-game model |
 | `NBA_ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated CORS origins (the frontend) |
 | `NBA_CACHE_MAX_AGE` | `3600` | Seconds clients may cache `GET` responses |
 | `PORT` | `8000` | Port inside the Docker image |
@@ -126,12 +150,16 @@ The web app lives in `frontend/`: Next.js 16 (App Router, React Server Component
 
 | Route | Page |
 | :--- | :--- |
-| `/` | Overview: the MVP model's season-by-season record, the game model against its baselines, and a contents list |
+| `/` | Overview: the MVP model's season-by-season record, the game model against its baselines and its record this season, and a contents list |
 | `/mvp` | MVP model accuracy overall and by era, a strip of every season (hit or miss), the method in brief, and a ledger of every pick against the real winner |
 | `/mvp/method` | How the MVP model works: the candidate rules (with a funnel of how many player-seasons each removes), the features, the two eras, model settings, validation, results and limitations, with the reasoning behind each decision |
 | `/mvp/{season}` | One season's race: model pick vs actual MVP side by side, a chart of each candidate's share of the model score, full candidate table, season picker |
 | `/players` | Player search: by name (as you type, ignoring accents), position, team and season; 25 per page. The filters live in the URL, so a search can be shared or bookmarked |
 | `/players/{id}` | Player profile: bio, MVP seasons, career averages, a chart of any stat by season, the season-by-season table with career bests marked, and the five most similar players in a chosen season (`?season=`) |
+| `/games` | The coming week's games grouped by day: each team's chance, the predicted margin and key absences; then the season so far (winners called, how often favourites won at each level of confidence, latest results) |
+| `/games/{id}` | One game: win chance, predicted margin, the margin broken down by input group (a diverging bar chart, away left and home right), and both rosters with value, minutes, injury status and chance of playing. Upcoming games have Report / Sits / Plays controls for each player; the choices live in the URL (`?out=1629029&in=203999`) |
+| `/games/results` | Every game played this season with the prediction and final score, filterable by team, 24 per page |
+| `/games/method` | How the game predictor works: team strength, player value, the injury report, the model and its weights, held-out, walk-forward, ablation and calibration results, and limitations |
 | `/compare` | Two to four players side by side in a season they all played: every stat with its percentile (against all players or the same position), grouped into scoring, playmaking, rebounding and defence, and overall impact, with the leader in each row and a count of categories led. The comparison appears when Compare is pressed and hides again when the lineup changes. The lineup, season, peer group and whether the comparison is shown live in the URL (`?ids=2544,201939&season=2015-16&peers=position&show=1`), so shared links open straight on the comparison; each open slot in the lineup opens a picker: a search box plus suggestions (the player's closest matches, or the top of last season's MVP race) |
 
 ### Code layout
@@ -145,6 +173,7 @@ frontend/src/
 │   ├── mvp/             # MVP page components (season strip, ledger, funnel, validation diagram, ...)
 │   ├── players/         # Player search and profile components
 │   ├── compare/         # Compare page: lineup cards, add-player slots and picker, comparison table
+│   ├── games/           # Game predictor: chance bar, game card, margin breakdown, rosters with what-if controls
 │   └── editorial.tsx    # Shared layout pieces: numbered sections, big figures, decision notes
 ├── content/
 │   └── mvp-method.ts    # Facts about the MVP model shown on /mvp/method (rules, funnel counts, features, settings)
@@ -154,6 +183,7 @@ frontend/src/
     ├── format.ts        # Number, season and name formatting
     ├── player-search.ts # /players URL <-> API query mapping (invalid values are dropped, not sent)
     ├── compare.ts       # /compare URL <-> state, metric groups, category leaders
+    ├── games.ts         # /games/{id} what-if URL <-> state, prediction wording
     └── theme.ts         # Dark/light theme without a flash on load
 ```
 
@@ -179,17 +209,18 @@ frontend/src/
 ## Testing and CI
 
 - **Pipeline:** unit tests for helpers, integrity checks on the committed datasets, model regression guards (MVP accuracy, tier ordering, no look-ahead in game features).
-- **Export:** builds the database in a temp folder and checks foreign keys, MVP consistency, percentile bounds, game-log records against standings, and exported-model parity with XGBoost.
+- **Game model:** the injury report parser (names, wrapped reasons, tip times), Elo and team state without look-ahead, player value and best-first minutes, availability (fresh vs long injuries, benched players, returning stars), features, win probability and calibration.
+- **Export:** builds the database in a temp folder and checks foreign keys, MVP consistency, percentile bounds, game-log records against standings, that stored game predictions follow from their inputs, and that the stored players add up to each team's expected value (what the API's what-ifs rely on).
 - **Backend:** endpoint tests with FastAPI's `TestClient` against the real database, covering:
   - search relevance, accent handling and pagination
   - 404 and 422 cases
-  - prediction validation
+  - game predictions: list and detail agree, the breakdown sums to the margin, sitting a star lowers his team's chance, what-if validation
   - cache and CORS headers
-  - unit tests for the tree evaluator, and parity with XGBoost
   - a snapshot test that fails if the API schema changes without `backend/openapi.json` being regenerated
 - **Frontend:** type checking, ESLint, and Vitest + Testing Library tests for:
   - formatting helpers and colour contrast
   - navigation state
+  - the game predictor's what-if URL state and wording
   - the MVP components and the chart option builder
 
   End-to-end tests (Playwright) are planned for phase 4.
@@ -207,6 +238,6 @@ GitHub Actions runs four jobs on every push to `main` and every pull request:
 | 0. Foundations | Serving database export, official player bio data, this document | Done |
 | 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
 | 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Done |
-| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | In progress (search, profile and compare done) |
+| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | In progress (search, profile, compare and game predictor done) |
 | 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |
