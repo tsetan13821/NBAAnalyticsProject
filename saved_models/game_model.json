@@ -1,0 +1,75 @@
+{
+  "features": [
+    "ELO_DIFF",
+    "NO_CROWD",
+    "REDUCED_CROWD",
+    "NET_DIFF",
+    "FORM_DIFF",
+    "REST_DIFF",
+    "HOME_B2B",
+    "AWAY_B2B",
+    "HOME_3IN4",
+    "AWAY_3IN4",
+    "AWAY_TRAVEL",
+    "AWAY_TZ_EAST",
+    "FULL_DIFF",
+    "RECENT_DIFF",
+    "AVAIL_DIFF"
+  ],
+  "groups": {
+    "strength": [
+      "ELO_DIFF"
+    ],
+    "home": [
+      "NO_CROWD",
+      "REDUCED_CROWD"
+    ],
+    "season": [
+      "NET_DIFF",
+      "FORM_DIFF"
+    ],
+    "schedule": [
+      "REST_DIFF",
+      "HOME_B2B",
+      "AWAY_B2B",
+      "HOME_3IN4",
+      "AWAY_3IN4",
+      "AWAY_TRAVEL",
+      "AWAY_TZ_EAST"
+    ],
+    "roster": [
+      "FULL_DIFF",
+      "RECENT_DIFF"
+    ],
+    "availability": [
+      "AVAIL_DIFF"
+    ]
+  },
+  "coefficients": {
+    "ELO_DIFF": 0.536345,
+    "NO_CROWD": -1.091442,
+    "REDUCED_CROWD": -0.986081,
+    "NET_DIFF": 0.347123,
+    "FORM_DIFF": 0.015501,
+    "REST_DIFF": -0.053866,
+    "HOME_B2B": -1.759323,
+    "AWAY_B2B": 1.699322,
+    "HOME_3IN4": -0.285197,
+    "AWAY_3IN4": 0.638538,
+    "AWAY_TRAVEL": 0.051159,
+    "AWAY_TZ_EAST": 0.269333,
+    "FULL_DIFF": -0.160491,
+    "RECENT_DIFF": 0.344186,
+    "AVAIL_DIFF": 0.294567
+  },
+  "intercept": 1.623439,
+  "spread": 12.5835,
+  "play_rates": {
+    "Out": 0.001,
+    "Doubtful": 0.022,
+    "Questionable": 0.549,
+    "Probable": 0.953,
+    "Available": 0.948
+  },
+  "trained_on": "2019-20 to 2025-26"
+}
