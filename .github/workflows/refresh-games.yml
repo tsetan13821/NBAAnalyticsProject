@@ -33,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -47,7 +47,7 @@ jobs:
       # The injury report PDFs aren't committed (data/cache/ is ignored). Without this, every run would
       # download the whole season's reports again.
       - name: Restore downloaded injury reports
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: data/cache
           key: nba-cache-${{ github.run_id }}
