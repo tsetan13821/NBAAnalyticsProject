@@ -48,16 +48,20 @@ Built by `python -m src.export_db` (about 12 MB). Columns ending in `_pg` are pe
 | Table | Rows (approx.) | Contents |
 | :--- | ---: | :--- |
 | `franchises` | 30 | Current team abbreviation, NBA team ID (for logos), name, conference, brand colors |
-| `players` | 2,000 | Name, search key (lowercase, no accents), official listed position and G/F/C group, height, weight, country, college, draft details |
-| `seasons` | 26 | 2000-01 to 2025-26, with champion and MVP |
-| `team_seasons` | 776 | Record, win %, point differential, conference rank, championship flag |
-| `player_seasons` | 10,600 | Per-game and advanced stats, archetype, tier and archetype scores |
+| `players` | 2,100 | Name, search key (lowercase, no accents), official listed position and G/F/C group, height, weight, country, college, draft details, team in the last season of stats, current team |
+| `seasons` | 27 | 2000-01 to 2025-26 with champion and MVP, plus the season in progress (`in_progress = 1`) |
+| `team_seasons` | 806 | Record, win %, point differential, conference rank, championship flag (standings so far for the season in progress) |
+| `player_seasons` | 11,100 | Per-game and advanced stats, archetype, tier and archetype scores |
 | `player_percentiles` | 21,000 | Percentile of each stat among all players and within the player's position group, per season |
 | `similar_players` | 37,000 | Five most similar player-seasons (same season) by archetype-score distance |
 | `mvp_candidates` | 285 | Leave-one-season-out model score and rank for every MVP candidate |
 | `mvp_seasons` | 26 | Predicted vs actual MVP per season, era, where the real MVP ranked |
 | `team_game_log` | 14,500 | Each team's game-by-game results and running record (2020-21 onward) |
-| `meta` | — | Build time, season range, headline model metrics |
+| `meta` | — | Build time, first and last completed season, the season in progress and when it was fetched, headline model metrics, date the rosters were read |
+
+**The season in progress.** The models need finished seasons with known winners, so they only ever see the completed seasons in `config.yaml` (`start_season` to `end_season`). The season under way (`current_season`) is fetched separately by `src/data_pipeline/fetch_current_season.py` into `data/raw/current_season_*.csv`: every player who has played at least one game (the usual 20-game minimum would leave nobody early on) and the standings so far. `export_db` merges it into the player and team tables and marks it `in_progress`; it gets no MVP predictions, archetypes or similar players. The API returns `in_progress` on every season it reports, and `meta.last_season` stays the last completed season. Re-run the script, then `python -m src.export_db`, to bring it up to date. When the season ends, move it to `end_season`, set the next one as `current_season`, and rerun `python -m src.pipeline --fetch`.
+
+**Current team vs last team.** Players move between seasons and during them, so the team in a player's newest season of stats isn't always the team they're on now. `latest_team_abbr` is the player's team in their last season of stats; `current_team_abbr` is the team NBA.com lists them on today (NULL for retired players and free agents), read by `src/data_pipeline/fetch_player_bio.py` along with the bio data. The site shows the current team with the date the rosters were read (`rosters_as_of`), and notes when it differs from the team in the stats. Re-run that script, then `python -m src.export_db`, to pick up trades and signings.
 
 Relocated teams (for example the Seattle SuperSonics) are stored under their current franchise (`OKC`), with the abbreviation of the time kept in `team_abbr_then`.
 
@@ -71,7 +75,7 @@ The API lives in `backend/`. Interactive documentation is served at `/docs`, and
 | `GET /api/v1/seasons` | Every season with its champion and MVP |
 | `GET /api/v1/health` | Health check (database schema version, build time) |
 | `GET /api/v1/players?q=&position_group=&season=&team=&limit=&offset=` | Paginated player search; ignores accents and case |
-| `GET /api/v1/players/{id}` | Profile: bio, career averages, season-by-season stats, MVP seasons |
+| `GET /api/v1/players/{id}` | Profile: bio, current team, career averages, season-by-season stats, MVP seasons |
 | `GET /api/v1/players/{id}/similar?season=` | Five most similar players in a season |
 | `GET /api/v1/players/compare?ids=&ids=&season=&peer_group=ALL\|POSITION` | Stats and percentiles for 2 to 4 players |
 | `GET /api/v1/mvp` | Model accuracy overall, by era and per season |
@@ -126,6 +130,8 @@ The web app lives in `frontend/`: Next.js 16 (App Router, React Server Component
 | `/mvp` | MVP model accuracy overall and by era, a strip of every season (hit or miss), the method in brief, and a ledger of every pick against the real winner |
 | `/mvp/method` | How the MVP model works: the candidate rules (with a funnel of how many player-seasons each removes), the features, the two eras, model settings, validation, results and limitations, with the reasoning behind each decision |
 | `/mvp/{season}` | One season's race: model pick vs actual MVP side by side, a chart of each candidate's share of the model score, full candidate table, season picker |
+| `/players` | Player search: by name (as you type, ignoring accents), position, team and season; 25 per page. The filters live in the URL, so a search can be shared or bookmarked |
+| `/players/{id}` | Player profile: bio, MVP seasons, career averages, a chart of any stat by season, the season-by-season table with career bests marked, and the five most similar players in a chosen season (`?season=`) |
 
 ### Code layout
 
@@ -136,6 +142,7 @@ frontend/src/
 │   ├── ui/              # shadcn/ui primitives (card, table, select, ...)
 │   ├── charts/          # ECharts wrapper and chart components (client-side)
 │   ├── mvp/             # MVP page components (season strip, ledger, funnel, validation diagram, ...)
+│   ├── players/         # Player search and profile components
 │   └── editorial.tsx    # Shared layout pieces: numbered sections, big figures, decision notes
 ├── content/
 │   └── mvp-method.ts    # Facts about the MVP model shown on /mvp/method (rules, funnel counts, features, settings)
@@ -143,6 +150,7 @@ frontend/src/
     ├── api/client.ts    # Typed, cached API access (server-side only)
     ├── api/schema.ts    # Generated from backend/openapi.json (npm run gen:api)
     ├── format.ts        # Number, season and name formatting
+    ├── player-search.ts # /players URL <-> API query mapping (invalid values are dropped, not sent)
     └── theme.ts         # Dark/light theme without a flash on load
 ```
 
@@ -153,7 +161,8 @@ frontend/src/
 - **Fetched at request time, cached for an hour.** With Next.js Cache Components, every page is a prerendered static shell (layout, headings, skeletons) and the data streams in. Each API getter awaits `connection()` and then calls a `"use cache"` function with `cacheLife("hours")`. The result:
   - `next build` never needs the API running, so CI and the Docker image build the frontend on their own.
   - Repeat visits are served from the cache.
-- **Errors.** If the API is unreachable, the error boundary shows a retry page. An unknown season renders the not-found page with a `noindex` tag. The HTTP status stays 200, because the status line is sent with the static shell before the season is checked. This is a known trade-off of streaming.
+- **Search.** The player search is a plain GET form, so it works before JavaScript loads. Once it has, results update after a short pause in typing (replacing the history entry) or as soon as a filter changes (adding one, so Back undoes it).
+- **Errors.** If the API is unreachable, the error boundary shows a retry page. An unknown season or player renders the not-found page with a `noindex` tag. The HTTP status stays 200, because the status line is sent with the static shell before the season is checked. This is a known trade-off of streaming.
 
 ### Design
 
@@ -195,6 +204,6 @@ GitHub Actions runs four jobs on every push to `main` and every pull request:
 | 0. Foundations | Serving database export, official player bio data, this document | Done |
 | 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
 | 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Done |
-| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | Next |
+| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | In progress (search and profile done) |
 | 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |

@@ -7,10 +7,10 @@ import { Suspense } from "react";
 import { MvpRaceChart } from "@/components/charts/mvp-race-chart";
 import { Section, SectionHeading } from "@/components/editorial";
 import { CandidatesTable } from "@/components/mvp/candidates-table";
-import { SeasonPicker } from "@/components/mvp/season-picker";
 import { SeasonStrip } from "@/components/mvp/season-strip";
 import { PageHeader } from "@/components/page-header";
 import { PlayerAvatar } from "@/components/player-avatar";
+import { SeasonPicker } from "@/components/season-picker";
 import { TeamBadge } from "@/components/team-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMvpOverview, getMvpRace, type MvpCandidate } from "@/lib/api/client";
@@ -61,7 +61,7 @@ async function SeasonRace({ params }: Pick<PageProps<"/mvp/[season]">, "params">
             ? `The model's first choice, ${pick.player.name}, won the award.`
             : `The model backed ${pick.player.name}. The award went to ${mvp?.player.name ?? "another player"}, its ${ordinal(race.actual_rank)} choice.`
         }
-        actions={<SeasonPicker seasons={overview.seasons.map((s) => s.season)} current={season} />}
+        actions={<SeasonPicker seasons={overview.seasons.map((s) => s.season)} current={season} href="/mvp/{season}" />}
       />
 
       <Section>

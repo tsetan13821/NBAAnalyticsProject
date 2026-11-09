@@ -55,3 +55,29 @@ export function adjacentSeasons(seasons: string[], current: string): { previous?
   if (index === -1) return {};
   return { previous: seasons[index - 1], next: seasons[index + 1] };
 }
+
+/** Every season from first to last, oldest first: "2000-01", "2002-03" -> ["2000-01", "2001-02", "2002-03"] */
+export function seasonsBetween(first: string, last: string): string[] {
+  const start = Number(first.slice(0, 4));
+  return Array.from({ length: seasonCount(first, last) }, (_, i) => {
+    const year = start + i;
+    return `${year}-${String((year + 1) % 100).padStart(2, "0")}`;
+  });
+}
+
+/** 83 -> "6′11″" */
+export function height(inches: number): string {
+  return `${Math.floor(inches / 12)}′${inches % 12}″`;
+}
+
+/** "2003-04", "2025-26" -> "2003-04 to 2025-26"; one season -> "2003-04" */
+export function seasonSpan(first: string, last: string): string {
+  return first === last ? first : `${first} to ${last}`;
+}
+
+/** "2026-11-09" -> "9 Nov 2026" (read as a calendar date, so the viewer's time zone can't shift it) */
+export function shortDate(isoDate: string): string {
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${isoDate}T00:00:00Z`),
+  );
+}

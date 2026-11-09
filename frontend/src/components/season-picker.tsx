@@ -9,15 +9,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { adjacentSeasons } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** Previous / next buttons plus a dropdown of every season. `seasons` is sorted oldest first. */
-export function SeasonPicker({ seasons, current }: { seasons: string[]; current: string }) {
+/** "/mvp/{season}", "2023-24" -> "/mvp/2023-24" */
+export function seasonHref(template: string, season: string): string {
+  return template.replace("{season}", season);
+}
+
+/**
+ * Previous / next buttons plus a dropdown of every season. `seasons` is sorted oldest first, and
+ * `href` is a URL template with a `{season}` placeholder (a string, so a server component can pass it).
+ */
+export function SeasonPicker({
+  seasons,
+  current,
+  href,
+  scroll = true,
+}: {
+  seasons: string[];
+  current: string;
+  href: string;
+  /** false keeps the scroll position, for pickers that only change part of the page. */
+  scroll?: boolean;
+}) {
   const router = useRouter();
   const { previous, next } = adjacentSeasons(seasons, current);
+  const step = { href, scroll };
 
   return (
     <div className="flex items-center gap-1.5">
-      <StepLink season={previous} label="Previous season" icon={<ChevronLeftIcon />} />
-      <Select value={current} onValueChange={(season) => season && router.push(`/mvp/${season}`)}>
+      <StepLink {...step} season={previous} label="Previous season" icon={<ChevronLeftIcon />} />
+      <Select value={current} onValueChange={(season) => season && router.push(seasonHref(href, season), { scroll })}>
         <SelectTrigger aria-label="Season" className="tabular w-28">
           <SelectValue />
         </SelectTrigger>
@@ -29,12 +49,24 @@ export function SeasonPicker({ seasons, current }: { seasons: string[]; current:
           ))}
         </SelectContent>
       </Select>
-      <StepLink season={next} label="Next season" icon={<ChevronRightIcon />} />
+      <StepLink {...step} season={next} label="Next season" icon={<ChevronRightIcon />} />
     </div>
   );
 }
 
-function StepLink({ season, label, icon }: { season?: string; label: string; icon: React.ReactNode }) {
+function StepLink({
+  season,
+  label,
+  icon,
+  href,
+  scroll,
+}: {
+  season?: string;
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+  scroll: boolean;
+}) {
   const className = cn(buttonVariants({ variant: "outline", size: "icon" }));
   if (!season) {
     return (
@@ -44,7 +76,7 @@ function StepLink({ season, label, icon }: { season?: string; label: string; ico
     );
   }
   return (
-    <Link href={`/mvp/${season}`} className={className} aria-label={`${label}: ${season}`}>
+    <Link href={seasonHref(href, season)} scroll={scroll} className={className} aria-label={`${label}: ${season}`}>
       {icon}
     </Link>
   );

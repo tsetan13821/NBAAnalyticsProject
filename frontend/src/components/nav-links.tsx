@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/", label: "Overview" },
   { href: "/mvp", label: "MVP Race" },
-  { href: "/mvp/method", label: "Method" },
+  { href: "/players", label: "Players" },
 ] as const;
 
-/** The most specific link that matches wins, so /mvp/method highlights "Method", not "MVP Race". */
+/** The link whose section contains the path; the most specific wins if sections ever nest. */
 export function activeHref(pathname: string): string | undefined {
   const matches = LINKS.map((link) => link.href).filter((href) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`),
@@ -23,7 +23,7 @@ export function activeHref(pathname: string): string | undefined {
 export function NavLinkList({ pathname }: { pathname?: string }) {
   const active = pathname === undefined ? undefined : activeHref(pathname);
   return (
-    <nav aria-label="Main" className="flex items-stretch gap-4 sm:gap-6">
+    <nav aria-label="Main" className="-mx-1 flex min-w-0 items-stretch gap-4 overflow-x-auto px-1 [scrollbar-width:none] sm:gap-6">
       {LINKS.map(({ href, label }) => (
         <Link
           key={href}

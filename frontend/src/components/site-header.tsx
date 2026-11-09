@@ -8,7 +8,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-t-[3px] border-t-brand border-b bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75">
       <div className="mx-auto flex h-14 max-w-6xl items-stretch gap-4 px-4 sm:gap-8 sm:px-6">
-        <Link href="/" aria-label="NBA Analytics home" className="flex items-center gap-2.5">
+        <Link href="/" aria-label="NBA Analytics home" className="flex shrink-0 items-center gap-2.5">
           <BallMark />
           <span className="hidden font-display text-xl leading-none font-bold tracking-wide uppercase sm:inline">
             NBA&nbsp;Analytics

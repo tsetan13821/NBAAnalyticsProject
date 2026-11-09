@@ -2,30 +2,13 @@
 
 import { useMemo } from "react";
 
-import { cssColor, EChart, type EChartOption } from "@/components/charts/echart";
+import { EChart, type EChartOption } from "@/components/charts/echart";
+import { type Palette, readPalette } from "@/components/charts/palette";
 import type { MvpCandidate } from "@/lib/api/client";
 import { percent, shortName } from "@/lib/format";
-import { currentTheme, type Theme, useTheme } from "@/lib/theme";
+import { currentTheme, useTheme } from "@/lib/theme";
 
 const BAR_HEIGHT = 34;
-
-type Palette = { brand: string; muted: string; text: string; subtle: string; grid: string; popover: string; font?: string };
-
-const palettes: Partial<Record<Theme, Palette>> = {};
-
-/** The chart colours for a theme, read from CSS variables once per theme. Call only while that theme is active. */
-function readPalette(theme: Theme): Palette {
-  return (palettes[theme] ??= {
-    brand: cssColor("--brand"),
-    muted: cssColor("--chart-muted"),
-    text: cssColor("--foreground"),
-    subtle: cssColor("--muted-foreground"),
-    grid: cssColor("--border"),
-    popover: cssColor("--popover"),
-    // next/font exposes the generated family list (with its metric-matched fallback) as a variable.
-    font: getComputedStyle(document.documentElement).getPropertyValue("--font-barlow").trim() || undefined,
-  });
-}
 
 export function buildRaceOption(candidates: MvpCandidate[], palette: Palette): EChartOption {
   return {

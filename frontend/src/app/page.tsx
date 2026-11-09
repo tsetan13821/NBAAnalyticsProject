@@ -21,7 +21,11 @@ const CONTENTS: { title: string; description: string; href?: string }[] = [
     description: "The rules, features, settings and validation, with every design decision and its trade-off.",
     href: "/mvp/method",
   },
-  { title: "Players", description: "Search 2,000 players, career profiles and percentile comparisons." },
+  {
+    title: "Players",
+    description: "Every player since 2000: season-by-season numbers, career arc and the most similar players.",
+    href: "/players",
+  },
   { title: "Game predictor", description: "Win probability for any matchup from each team's record." },
   { title: "Franchises", description: "Records, rosters and championships for all 30 teams." },
 ];
@@ -30,7 +34,7 @@ export default function HomePage() {
   return (
     <>
       <PageHeader
-        eyebrow="NBA.com data · 2000-01 to 2025-26"
+        eyebrow="NBA.com data · 2000-01 to the current season"
         title={
           <>
             Twenty-six seasons,

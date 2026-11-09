@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { adjacentSeasons, initials, isSeason, ordinal, percent, ratio, seasonCount, shortName, stat } from "./format";
+import {
+  adjacentSeasons,
+  height,
+  initials,
+  isSeason,
+  ordinal,
+  percent,
+  ratio,
+  seasonCount,
+  seasonsBetween,
+  seasonSpan,
+  shortDate,
+  shortName,
+  stat,
+} from "./format";
 
 describe("isSeason", () => {
   it.each(["2000-01", "2025-26", "1999-00"])("accepts %s", (value) => {
@@ -57,5 +71,35 @@ describe("seasons", () => {
     expect(adjacentSeasons(seasons, "2023-24")).toEqual({ previous: "2022-23", next: "2024-25" });
     expect(adjacentSeasons(seasons, "2022-23")).toEqual({ previous: undefined, next: "2023-24" });
     expect(adjacentSeasons(seasons, "1990-91")).toEqual({});
+  });
+});
+
+describe("seasonsBetween", () => {
+  it("lists every season, oldest first", () => {
+    expect(seasonsBetween("2000-01", "2002-03")).toEqual(["2000-01", "2001-02", "2002-03"]);
+    expect(seasonsBetween("2025-26", "2025-26")).toEqual(["2025-26"]);
+  });
+
+  it("handles the century turn", () => {
+    expect(seasonsBetween("1998-99", "2000-01")).toEqual(["1998-99", "1999-00", "2000-01"]);
+  });
+});
+
+describe("height and seasonSpan", () => {
+  it("formats inches as feet and inches", () => {
+    expect(height(83)).toBe("6′11″");
+    expect(height(72)).toBe("6′0″");
+  });
+
+  it("collapses a single season", () => {
+    expect(seasonSpan("2003-04", "2025-26")).toBe("2003-04 to 2025-26");
+    expect(seasonSpan("2010-11", "2010-11")).toBe("2010-11");
+  });
+});
+
+describe("shortDate", () => {
+  it("formats an ISO date without shifting it by time zone", () => {
+    expect(shortDate("2026-11-09")).toBe("9 Nov 2026");
+    expect(shortDate("2027-01-01")).toBe("1 Jan 2027");
   });
 });

@@ -5,7 +5,7 @@ export function SiteFooter() {
         <div>
           <p className="font-display text-lg font-bold tracking-wide text-foreground uppercase">NBA Analytics</p>
           <p className="mt-1 max-w-xl">
-            Regular-season data from NBA.com stats, 2000-01 to 2025-26. Built as an independent project; not
+            Regular-season data from NBA.com stats, 2000-01 to the current season. Built as an independent project; not
             affiliated with or endorsed by the NBA.
           </p>
         </div>

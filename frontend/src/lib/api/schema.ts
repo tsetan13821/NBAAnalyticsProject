@@ -354,12 +354,27 @@ export interface components {
         Meta: {
             /** Built At */
             built_at: string;
+            /**
+             * Current Season
+             * @description The season under way, if its stats so far are included; last_season is the last completed one
+             */
+            current_season: string | null;
+            /**
+             * Current Season As Of
+             * @description Date (YYYY-MM-DD) the season-in-progress stats were fetched
+             */
+            current_season_as_of: string | null;
             /** First Season */
             first_season: string;
             /** Last Season */
             last_season: string;
             mvp_model: components["schemas"]["MvpModelInfo"];
             next_game_model: components["schemas"]["NextGameModelInfo"];
+            /**
+             * Rosters As Of
+             * @description Date (YYYY-MM-DD) the current-team data was taken from NBA.com rosters
+             */
+            rosters_as_of: string;
         };
         /** MetricInfo */
         MetricInfo: {
@@ -516,6 +531,8 @@ export interface components {
             college: string | null;
             /** Country */
             country: string | null;
+            /** @description Team the player is on now, from NBA.com rosters on meta.rosters_as_of; null for players not on a roster (retired or free agents) */
+            current_team: components["schemas"]["TeamRef"] | null;
             /** Draft Number */
             draft_number: number | null;
             /** Draft Round */
@@ -535,6 +552,7 @@ export interface components {
             id: number;
             /** Last Season */
             last_season: string;
+            /** @description Team in the player's last season in this data (last_season) */
             latest_team: components["schemas"]["TeamRef"];
             /** Mvp Seasons */
             mvp_seasons: string[];
@@ -601,6 +619,11 @@ export interface components {
             ft_pct: number;
             /** Games */
             games: number;
+            /**
+             * In Progress
+             * @description True for the season under way: the numbers are so far, not final
+             */
+            in_progress: boolean;
             /** Min Pg */
             min_pg: number;
             /** Net Rating */
@@ -642,6 +665,8 @@ export interface components {
         };
         /** PlayerSummary */
         PlayerSummary: {
+            /** @description Team the player is on now, from NBA.com rosters on meta.rosters_as_of; null for players not on a roster (retired or free agents) */
+            current_team: components["schemas"]["TeamRef"] | null;
             /** First Season */
             first_season: string;
             /** Headshot Url */
@@ -650,6 +675,7 @@ export interface components {
             id: number;
             /** Last Season */
             last_season: string;
+            /** @description Team in the player's last season in this data (last_season) */
             latest_team: components["schemas"]["TeamRef"];
             /** Name */
             name: string;
@@ -748,6 +774,11 @@ export interface components {
         /** SeasonInfo */
         SeasonInfo: {
             champion: components["schemas"]["TeamRef"] | null;
+            /**
+             * In Progress
+             * @description True for the season under way: the numbers are so far, not final
+             */
+            in_progress: boolean;
             mvp: components["schemas"]["PlayerRef"] | null;
             /** Season */
             season: string;
@@ -855,6 +886,11 @@ export interface components {
         TeamRecord: {
             /** Conference Rank */
             conference_rank: number;
+            /**
+             * In Progress
+             * @description True for the season under way: the numbers are so far, not final
+             */
+            in_progress: boolean;
             /** Losses */
             losses: number;
             /** Season */
@@ -895,6 +931,11 @@ export interface components {
             conference: "East" | "West";
             /** Conference Rank */
             conference_rank: number;
+            /**
+             * In Progress
+             * @description True for the season under way: the numbers are so far, not final
+             */
+            in_progress: boolean;
             /** Is Champion */
             is_champion: boolean;
             /** Losses */
