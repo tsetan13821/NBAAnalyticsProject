@@ -10,8 +10,14 @@ STAT_FIELDS = (
 )
 METRIC_FIELDS = STAT_FIELDS[1:]  # everything except games
 
-_SUMMARY_COLUMNS = f"{player_columns('p', 'p_')}, p.position, p.first_season, p.last_season, {team_columns('f', 't_')}"
-_SUMMARY_FROM = "FROM players p JOIN franchises f ON f.abbr = p.latest_team_abbr"
+_SUMMARY_COLUMNS = (
+    f"{player_columns('p', 'p_')}, p.position, p.first_season, p.last_season, "
+    f"{team_columns('f', 't_')}, {team_columns('cf', 'ct_')}"
+)
+_SUMMARY_FROM = (
+    "FROM players p JOIN franchises f ON f.abbr = p.latest_team_abbr"
+    " LEFT JOIN franchises cf ON cf.abbr = p.current_team_abbr"
+)
 _BIO_FIELDS = (
     "height_in", "weight_lb", "country", "college", "draft_year", "draft_round", "draft_number", "seasons_played",
 )
@@ -25,6 +31,7 @@ def _summary(row: sqlite3.Row) -> dict:
         "first_season": row["first_season"],
         "last_season": row["last_season"],
         "latest_team": team_ref(row, "t_"),
+        "current_team": team_ref(row, "ct_") if row["ct_abbr"] else None,
     }
 
 
@@ -79,8 +86,9 @@ def get_profile(conn: sqlite3.Connection, player_id: int) -> dict | None:
         return None
 
     seasons = conn.execute(
-        f"""SELECT season, team_abbr, team_abbr_then, archetype, tier, {', '.join(STAT_FIELDS)}
-            FROM player_seasons WHERE player_id = ? ORDER BY season""",
+        f"""SELECT ps.season, ps.team_abbr, ps.team_abbr_then, ps.archetype, ps.tier, s.in_progress,
+                   {', '.join(f'ps.{f}' for f in STAT_FIELDS)}
+            FROM player_seasons ps JOIN seasons s USING (season) WHERE ps.player_id = ? ORDER BY ps.season""",
         (player_id,),
     ).fetchall()
     # Career averages are weighted by games played in each season.

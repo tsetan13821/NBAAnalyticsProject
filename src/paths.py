@@ -11,6 +11,8 @@ MODELS_DIR = PROJECT_ROOT / "saved_models"
 
 RAW_PLAYER_STATS = RAW_DIR / "nba_player_stats.csv"
 PLAYER_BIO = RAW_DIR / "player_bio.csv"
+CURRENT_SEASON_STATS = RAW_DIR / "current_season_stats.csv"
+CURRENT_SEASON_STANDINGS = RAW_DIR / "current_season_standings.csv"
 MVP_DATA = PROCESSED_DIR / "mvp_data.csv"
 CLUSTERED_PLAYERS = PROCESSED_DIR / "clustered_players_master.csv"
 ALL_STARS_MASTER = PROCESSED_DIR / "all_stars_master.csv"

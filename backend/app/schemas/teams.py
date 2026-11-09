@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.common import Archetype, PlayerRef, Season, TeamRef, Tier
 
@@ -11,6 +11,7 @@ class TeamRecord(BaseModel):
     losses: int
     win_pct: float
     conference_rank: int
+    in_progress: bool = Field(description="True for the season under way: the numbers are so far, not final")
 
 
 class TeamSummary(TeamRef):

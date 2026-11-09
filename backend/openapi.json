@@ -300,6 +300,30 @@
             "title": "Built At",
             "type": "string"
           },
+          "current_season": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The season under way, if its stats so far are included; last_season is the last completed one",
+            "title": "Current Season"
+          },
+          "current_season_as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date (YYYY-MM-DD) the season-in-progress stats were fetched",
+            "title": "Current Season As Of"
+          },
           "first_season": {
             "title": "First Season",
             "type": "string"
@@ -313,12 +337,20 @@
           },
           "next_game_model": {
             "$ref": "#/components/schemas/NextGameModelInfo"
+          },
+          "rosters_as_of": {
+            "description": "Date (YYYY-MM-DD) the current-team data was taken from NBA.com rosters",
+            "title": "Rosters As Of",
+            "type": "string"
           }
         },
         "required": [
           "first_season",
           "last_season",
           "built_at",
+          "current_season",
+          "current_season_as_of",
+          "rosters_as_of",
           "mvp_model",
           "next_game_model"
         ],
@@ -707,6 +739,17 @@
             ],
             "title": "Country"
           },
+          "current_team": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Team the player is on now, from NBA.com rosters on meta.rosters_as_of; null for players not on a roster (retired or free agents)"
+          },
           "draft_number": {
             "anyOf": [
               {
@@ -769,7 +812,8 @@
             "type": "string"
           },
           "latest_team": {
-            "$ref": "#/components/schemas/TeamRef"
+            "$ref": "#/components/schemas/TeamRef",
+            "description": "Team in the player's last season in this data (last_season)"
           },
           "mvp_seasons": {
             "items": {
@@ -838,6 +882,7 @@
           "first_season",
           "last_season",
           "latest_team",
+          "current_team",
           "height_in",
           "weight_lb",
           "country",
@@ -950,6 +995,11 @@
             "title": "Games",
             "type": "integer"
           },
+          "in_progress": {
+            "description": "True for the season under way: the numbers are so far, not final",
+            "title": "In Progress",
+            "type": "boolean"
+          },
           "min_pg": {
             "title": "Min Pg",
             "type": "number"
@@ -1057,13 +1107,25 @@
           "team_abbr",
           "team_abbr_then",
           "archetype",
-          "tier"
+          "tier",
+          "in_progress"
         ],
         "title": "PlayerSeason",
         "type": "object"
       },
       "PlayerSummary": {
         "properties": {
+          "current_team": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Team the player is on now, from NBA.com rosters on meta.rosters_as_of; null for players not on a roster (retired or free agents)"
+          },
           "first_season": {
             "title": "First Season",
             "type": "string"
@@ -1081,7 +1143,8 @@
             "type": "string"
           },
           "latest_team": {
-            "$ref": "#/components/schemas/TeamRef"
+            "$ref": "#/components/schemas/TeamRef",
+            "description": "Team in the player's last season in this data (last_season)"
           },
           "name": {
             "title": "Name",
@@ -1120,7 +1183,8 @@
           "position",
           "first_season",
           "last_season",
-          "latest_team"
+          "latest_team",
+          "current_team"
         ],
         "title": "PlayerSummary",
         "type": "object"
@@ -1389,6 +1453,11 @@
               }
             ]
           },
+          "in_progress": {
+            "description": "True for the season under way: the numbers are so far, not final",
+            "title": "In Progress",
+            "type": "boolean"
+          },
           "mvp": {
             "anyOf": [
               {
@@ -1406,6 +1475,7 @@
         },
         "required": [
           "season",
+          "in_progress",
           "champion",
           "mvp"
         ],
@@ -1697,6 +1767,11 @@
             "title": "Conference Rank",
             "type": "integer"
           },
+          "in_progress": {
+            "description": "True for the season under way: the numbers are so far, not final",
+            "title": "In Progress",
+            "type": "boolean"
+          },
           "losses": {
             "title": "Losses",
             "type": "integer"
@@ -1719,7 +1794,8 @@
           "wins",
           "losses",
           "win_pct",
-          "conference_rank"
+          "conference_rank",
+          "in_progress"
         ],
         "title": "TeamRecord",
         "type": "object"
@@ -1780,6 +1856,11 @@
             "title": "Conference Rank",
             "type": "integer"
           },
+          "in_progress": {
+            "description": "True for the season under way: the numbers are so far, not final",
+            "title": "In Progress",
+            "type": "boolean"
+          },
           "is_champion": {
             "title": "Is Champion",
             "type": "boolean"
@@ -1815,6 +1896,7 @@
           "losses",
           "win_pct",
           "conference_rank",
+          "in_progress",
           "team_abbr_then",
           "conference",
           "point_diff_pg",

@@ -4,10 +4,11 @@ from app.repositories.refs import player_columns, player_ref, team_columns, team
 
 _TEAM_SELECT = f"""
     SELECT {team_columns('f', 't_')}, f.city, f.nickname, f.conference,
-           ts.season AS latest_season, ts.wins, ts.losses, ts.win_pct, ts.conference_rank
+           ts.season AS latest_season, ts.wins, ts.losses, ts.win_pct, ts.conference_rank, s.in_progress
     FROM franchises f
     JOIN team_seasons ts ON ts.team_abbr = f.abbr
      AND ts.season = (SELECT MAX(season) FROM team_seasons WHERE team_abbr = f.abbr)
+    JOIN seasons s ON s.season = ts.season
 """
 
 
@@ -20,6 +21,7 @@ def _summary(row: sqlite3.Row) -> dict:
         "latest": {
             "season": row["latest_season"], "wins": row["wins"], "losses": row["losses"],
             "win_pct": row["win_pct"], "conference_rank": row["conference_rank"],
+            "in_progress": bool(row["in_progress"]),
         },
     }
 
@@ -38,11 +40,11 @@ def get_team(conn: sqlite3.Connection, abbr: str) -> dict | None:
     if row is None:
         return None
     seasons = [
-        {**dict(s), "is_champion": bool(s["is_champion"])}
+        {**dict(s), "is_champion": bool(s["is_champion"]), "in_progress": bool(s["in_progress"])}
         for s in conn.execute(
-            """SELECT season, team_abbr_then, conference, conference_rank, wins, losses, win_pct,
-                      point_diff_pg, is_champion
-               FROM team_seasons WHERE team_abbr = ? ORDER BY season""",
+            """SELECT ts.season, ts.team_abbr_then, ts.conference, ts.conference_rank, ts.wins, ts.losses,
+                      ts.win_pct, ts.point_diff_pg, ts.is_champion, s.in_progress
+               FROM team_seasons ts JOIN seasons s USING (season) WHERE ts.team_abbr = ? ORDER BY ts.season""",
             (abbr,),
         )
     ]

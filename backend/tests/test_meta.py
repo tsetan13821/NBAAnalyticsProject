@@ -1,8 +1,13 @@
+import re
+
+from app.db import EXPECTED_SCHEMA_VERSION
+
+
 def test_health(client):
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
-    assert response.json()["schema_version"] == 1
+    assert response.json()["schema_version"] == EXPECTED_SCHEMA_VERSION
     assert response.headers["cache-control"] == "no-store"
 
 
@@ -10,14 +15,26 @@ def test_meta(get_json):
     meta = get_json("/meta")
     assert meta["first_season"] == "2000-01"
     assert meta["mvp_model"]["seasons"] == 26
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["rosters_as_of"])
     model = meta["next_game_model"]
     assert 0.5 < model["accuracy"] < 1
     assert model["test_season"] == "2025-26"
 
 
+def test_meta_separates_completed_and_current_seasons(get_json):
+    meta = get_json("/meta")
+    assert meta["last_season"] == "2025-26"  # the last completed season: what the models use
+    if meta["current_season"]:
+        assert meta["current_season"] > meta["last_season"]
+        assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["current_season_as_of"])
+
+
 def test_seasons(get_json):
     seasons = get_json("/seasons")
-    assert len(seasons) == 26
+    completed = [s for s in seasons if not s["in_progress"]]
+    assert len(completed) == 26
+    assert len(seasons) - len(completed) <= 1
+    assert all(s["champion"] is None and s["mvp"] is None for s in seasons if s["in_progress"])
     assert [s["season"] for s in seasons] == sorted((s["season"] for s in seasons), reverse=True)  # newest first
     by_season = {s["season"]: s for s in seasons}
     assert by_season["2024-25"]["champion"]["abbr"] == "OKC"

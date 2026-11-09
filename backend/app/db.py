@@ -7,7 +7,7 @@ from urllib.request import pathname2url
 
 from fastapi import Depends, Request
 
-EXPECTED_SCHEMA_VERSION = 1
+EXPECTED_SCHEMA_VERSION = 2
 
 
 class DatabaseError(RuntimeError):

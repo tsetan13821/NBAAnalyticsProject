@@ -2,7 +2,7 @@
 -- Read-only at runtime. Every stat column ending in _pg is a per-game average;
 -- *_pct columns are fractions (0.512 = 51.2%).
 
-PRAGMA user_version = 1;  -- bump when the schema changes
+PRAGMA user_version = 2;  -- bump when the schema changes
 
 CREATE TABLE meta (
     key   TEXT PRIMARY KEY,
@@ -36,7 +36,8 @@ CREATE TABLE players (
     first_season     TEXT NOT NULL,
     last_season      TEXT NOT NULL,
     seasons_played   INTEGER NOT NULL,
-    latest_team_abbr TEXT NOT NULL REFERENCES franchises (abbr)
+    latest_team_abbr TEXT NOT NULL REFERENCES franchises (abbr),  -- team in the player's last season in this data
+    current_team_abbr TEXT REFERENCES franchises (abbr)           -- NBA.com roster today; NULL if not on one
 );
 CREATE INDEX ix_players_search_name ON players (search_name);
 
@@ -44,7 +45,8 @@ CREATE TABLE seasons (
     season        TEXT PRIMARY KEY,                -- '2023-24'
     start_year    INTEGER NOT NULL UNIQUE,
     champion_abbr TEXT REFERENCES franchises (abbr),   -- NULL when not recorded
-    mvp_player_id INTEGER REFERENCES players (player_id)
+    mvp_player_id INTEGER REFERENCES players (player_id),
+    in_progress   INTEGER NOT NULL DEFAULT 0 CHECK (in_progress IN (0, 1))  -- 1: the season under way (stats so far)
 );
 
 CREATE TABLE team_seasons (

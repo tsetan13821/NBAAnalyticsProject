@@ -5,7 +5,8 @@
 
 Order:
     1. data_collection        -> data/raw/nba_player_stats.csv         (only with --fetch)
-       fetch_player_bio       -> data/raw/player_bio.csv               (only with --fetch)
+       fetch_current_season   -> data/raw/current_season_*.csv         (only with --fetch; season in progress)
+       fetch_player_bio       -> data/raw/player_bio.csv               (only with --fetch; bio and current teams)
     2. build_mvp_dataset      -> data/processed/mvp_data.csv           (calls the standings API)
     3. player_clustering      -> data/processed/*_data.csv, clustered_players_master.csv
     4. all_star_prediction    -> data/processed/all_stars_*.csv        (needs mvp_data.csv)
@@ -16,6 +17,7 @@ Order:
 import argparse
 
 from src import data_collection
+from src.data_pipeline.fetch_current_season import fetch_current_season
 from src.data_pipeline.fetch_player_bio import fetch_player_bio
 from src.export_db import main as export_serving_db
 from src.data_pipeline.build_mvp_dataset import build_mvp_dataset
@@ -33,7 +35,8 @@ def main():
     steps = []
     if args.fetch:
         steps.append(("Collect raw player stats", data_collection.main))
-        steps.append(("Fetch player bio data", fetch_player_bio))
+        steps.append(("Fetch the season in progress", fetch_current_season))
+        steps.append(("Fetch player bio data and current teams", fetch_player_bio))
     steps += [
         ("Build MVP dataset", build_mvp_dataset),
         ("Player clustering", run_clustering_pipeline),

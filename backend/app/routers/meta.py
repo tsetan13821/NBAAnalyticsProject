@@ -22,6 +22,9 @@ def get_meta(request: Request):
         "first_season": meta["first_season"],
         "last_season": meta["last_season"],
         "built_at": meta["built_at"],
+        "rosters_as_of": meta["rosters_as_of"],
+        "current_season": meta["current_season"] or None,
+        "current_season_as_of": meta["current_season_as_of"] or None,
         "mvp_model": {"correct": int(meta["mvp_correct"]), "seasons": int(meta["mvp_seasons"])},
         "next_game_model": {
             "test_season": _season_from_id(next_game["test_season_id"]),

@@ -61,6 +61,21 @@ def fetch_season_data(season, season_type):
         print(f"Error fetching data for {season}: {e}")
         return pd.DataFrame()
 
+def configured_features(config):
+    """Every stat column listed under `features` in the config, in order."""
+    return [feature for category in config['features'].values() for feature in category]
+
+
+def select_columns(df, features):
+    """Keep the player/season identifiers and the configured stat columns (warning about any the API lacks)."""
+    core_cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'SEASON']
+    available_features = [f for f in features if f in df.columns]
+    missing = set(features) - set(available_features)
+    if missing:
+        print(f"Warning: The following features from config were not found in the API response: {missing}")
+    return df[core_cols + available_features]
+
+
 def main():
     print("Loading configuration...")
     config = load_config()
@@ -69,9 +84,7 @@ def main():
     season_type = config['data_collection']['season_type']
     min_games = config['data_collection']['min_games_played']
     
-    features = []
-    for category in config['features'].values():
-        features.extend(category)
+    features = configured_features(config)
     
     seasons = generate_seasons(start_season, end_season)
     print(f"Fetching data for {len(seasons)} seasons: {start_season} to {end_season}")
@@ -95,18 +108,7 @@ def main():
         final_df = final_df[final_df['GP'] >= min_games]
         print(f"Shape after filtering for >= {min_games} games played: {final_df.shape}")
     
-    # Ensure all requested features are present (some advanced stats might have slightly different names in the API)
-    # The API generally uses these exact names, but it's good to verify.
-    # Player identifiers and season to keep
-    core_cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'SEASON']
-    available_features = [f for f in features if f in final_df.columns]
-    
-    missing = set(features) - set(available_features)
-    if missing:
-        print(f"Warning: The following features from config were not found in the API response: {missing}")
-    
-    final_cols = core_cols + available_features
-    final_df = final_df[final_cols]
+    final_df = select_columns(final_df, features)
     
     # Sort data chronologically by Season and then alphabetically by Player Name
     final_df = final_df.sort_values(by=['SEASON', 'PLAYER_NAME']).reset_index(drop=True)

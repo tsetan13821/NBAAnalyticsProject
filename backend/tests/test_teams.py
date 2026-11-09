@@ -1,9 +1,9 @@
-def test_list_teams(get_json):
+def test_list_teams(get_json, latest_season):
     teams = get_json("/teams")
     assert len(teams) == 30
     assert {t["conference"] for t in teams} == {"East", "West"}
     assert sum(t["conference"] == "East" for t in teams) == 15
-    assert all(t["latest"]["season"] == "2025-26" for t in teams)
+    assert all(t["latest"]["season"] == latest_season for t in teams)
 
 
 def test_team_detail(get_json):
@@ -13,7 +13,8 @@ def test_team_detail(get_json):
     assert "2024-25" in team["championships"]
 
     seasons = team["seasons"]
-    assert len(seasons) == 26
+    assert len([s for s in seasons if not s["in_progress"]]) == 26
+    assert all(not s["is_champion"] for s in seasons if s["in_progress"])
     assert seasons[0]["team_abbr_then"] == "SEA"
     assert team["total_wins"] == sum(s["wins"] for s in seasons)
     assert team["championships"] == [s["season"] for s in seasons if s["is_champion"]]
@@ -27,8 +28,8 @@ def test_roster(get_json):
     assert [p["pts_pg"] for p in players] == sorted((p["pts_pg"] for p in players), reverse=True)
 
 
-def test_roster_defaults_to_latest_season(get_json):
-    assert get_json("/teams/BOS/roster")["season"] == "2025-26"
+def test_roster_defaults_to_latest_season(get_json, latest_season):
+    assert get_json("/teams/BOS/roster")["season"] == latest_season
 
 
 def test_form_matches_standings(get_json):

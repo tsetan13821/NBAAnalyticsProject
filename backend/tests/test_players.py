@@ -49,8 +49,20 @@ def test_search_returns_summary_shape(get_json):
     player = get_json("/players", q="lebron")["items"][0]
     assert player["id"] == LEBRON
     assert player["first_season"] == "2003-04"
-    assert player["latest_team"]["abbr"] == "LAL"
+    assert player["latest_team"]["abbr"] in {"LAL", "PHI"}  # his team in his newest season in the data
     assert player["headshot_url"].endswith(f"/{LEBRON}.png")
+
+
+def test_current_team_is_separate_from_last_team_in_data(get_json):
+    # Rosters change with every refresh, so check the shape rather than a particular player's team.
+    tim_duncan = get_json("/players", q="tim duncan")["items"][0]
+    assert tim_duncan["current_team"] is None
+    assert tim_duncan["latest_team"]["abbr"] == "SAS"
+
+    recent = get_json("/players", season="2025-26", limit=100)["items"]
+    on_roster = [p for p in recent if p["current_team"]]
+    assert len(on_roster) > 50
+    assert set(on_roster[0]["current_team"]) == set(on_roster[0]["latest_team"])
 
 
 @pytest.mark.parametrize("params", [
@@ -74,6 +86,12 @@ def test_profile(get_json):
     assert profile["career"]["games"] == sum(s["games"] for s in seasons)
     weighted_pts = sum(s["pts_pg"] * s["games"] for s in seasons) / profile["career"]["games"]
     assert profile["career"]["pts_pg"] == pytest.approx(weighted_pts, abs=0.01)
+
+
+def test_profile_marks_the_season_in_progress(get_json, latest_season):
+    seasons = get_json(f"/players/{LEBRON}")["seasons"]
+    assert [s["season"] for s in seasons if s["in_progress"]] in ([], [latest_season])
+    assert not any(s["in_progress"] for s in seasons[:-1])
 
 
 def test_profile_keeps_historical_abbreviation(get_json):
@@ -114,11 +132,11 @@ def test_metrics_match_repository_fields():
     assert sorted(m["key"] for m in METRICS) == sorted(METRIC_FIELDS)
 
 
-def test_compare_defaults_to_latest_common_season(client):
+def test_compare_defaults_to_latest_common_season(client, latest_season):
     response = client.get("/api/v1/players/compare", params={"ids": [CURRY, LEBRON]})
     assert response.status_code == 200
     body = response.json()
-    assert body["season"] == "2025-26"
+    assert body["season"] == latest_season
     assert [p["player"]["id"] for p in body["players"]] == [CURRY, LEBRON]
     for player in body["players"]:
         assert player["peer_group"] == "ALL"

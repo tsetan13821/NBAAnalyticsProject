@@ -93,6 +93,13 @@ python -m src.models.mvp_prediction
 
 The last pipeline step, `python -m src.export_db`, builds the read-only serving database (`backend/data/nba.db`) used by the v2 API.
 
+To refresh just the season in progress and current rosters (a few NBA.com requests), then rebuild the database:
+```bash
+python -m src.data_pipeline.fetch_current_season
+python -m src.data_pipeline.fetch_player_bio
+python -m src.export_db
+```
+
 ### 4. Launch Streamlit Web Application
 ```bash
 streamlit run streamlit_app/app.py

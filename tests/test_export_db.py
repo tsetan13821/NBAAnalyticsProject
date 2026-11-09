@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from src.export_db import build_database
-from src.paths import NEXT_GAME_MODEL, RAW_PLAYER_STATS
+from src.paths import CURRENT_SEASON_STATS, NEXT_GAME_MODEL, RAW_PLAYER_STATS
 
 
 @pytest.fixture(scope="module")
@@ -28,17 +28,49 @@ def scalar(conn, sql, *params):
 
 def test_schema_version_and_integrity(built):
     conn, counts, _ = built
-    assert scalar(conn, "PRAGMA user_version") == 1
+    assert scalar(conn, "PRAGMA user_version") == 2
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
     assert all(n > 0 for n in counts.values()), counts
 
 
 def test_every_raw_player_season_is_exported(built):
     conn, _, _ = built
-    raw = pd.read_csv(RAW_PLAYER_STATS)
+    raw = pd.concat([pd.read_csv(RAW_PLAYER_STATS), pd.read_csv(CURRENT_SEASON_STATS)])
     assert scalar(conn, "SELECT COUNT(*) FROM player_seasons") == len(raw)
     assert scalar(conn, "SELECT COUNT(*) FROM players") == raw["PLAYER_ID"].nunique()
     assert scalar(conn, "SELECT COUNT(*) FROM players WHERE position_group IS NULL") == 0
+
+
+def test_season_in_progress_is_kept_out_of_the_models(built):
+    conn, _, _ = built
+    current = pd.read_csv(CURRENT_SEASON_STATS)["SEASON"].iloc[0]
+    meta = dict(conn.execute("SELECT key, value FROM meta").fetchall())
+    assert meta["current_season"] == current
+    assert meta["last_season"] < current
+    assert conn.execute("SELECT season FROM seasons WHERE in_progress = 1").fetchall() == [(current,)]
+    assert scalar(conn, "SELECT COUNT(*) FROM team_seasons WHERE season = ?", current) == 30
+    # No MVP, archetype or similarity data for a season that hasn't finished.
+    for sql in (
+        "SELECT COUNT(*) FROM mvp_candidates WHERE season = ?",
+        "SELECT COUNT(*) FROM player_seasons WHERE season = ? AND archetype IS NOT NULL",
+        "SELECT COUNT(*) FROM similar_players WHERE season = ?",
+    ):
+        assert scalar(conn, sql, current) == 0, sql
+
+
+def test_current_teams_come_from_rosters(built):
+    conn, _, _ = built
+    on_roster = scalar(conn, "SELECT COUNT(*) FROM players WHERE current_team_abbr IS NOT NULL")
+    # About 15 players per team are on a roster; some current players debuted after the data ends.
+    assert 300 <= on_roster <= 30 * 18, on_roster
+    # Almost nobody whose last season in the data is long gone is on a roster (the odd comeback from
+    # overseas happens: Mario Hezonja's last season here is 2019-20, and he is back on a roster).
+    assert scalar(conn, """
+        SELECT COUNT(*) FROM players p JOIN seasons s ON s.season = p.last_season
+        WHERE p.current_team_abbr IS NOT NULL AND s.start_year < (SELECT MAX(start_year) FROM seasons) - 3
+    """) <= 5
+    rosters_as_of = scalar(conn, "SELECT value FROM meta WHERE key = 'rosters_as_of'")
+    assert pd.Timestamp(rosters_as_of).year >= 2026
 
 
 def test_mvp_tables_are_consistent(built):

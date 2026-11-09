@@ -34,3 +34,13 @@ def get_json(client):
         return response.json()
 
     return get
+
+
+@pytest.fixture(scope="session")
+def latest_season(client):
+    """The newest season in the data: the one under way if its stats are included, else the last completed one.
+
+    Tests use this instead of a hard-coded season, so they keep passing when the data is refreshed.
+    """
+    meta = client.get("/api/v1/meta").json()
+    return meta["current_season"] or meta["last_season"]

@@ -5,7 +5,7 @@ from app.repositories.refs import player_columns, player_ref, team_columns, team
 
 def list_seasons(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
-        f"""SELECT s.season, s.champion_abbr, s.mvp_player_id,
+        f"""SELECT s.season, s.in_progress, s.champion_abbr, s.mvp_player_id,
                    {team_columns('f', 't_')}, {player_columns('p', 'p_')}
             FROM seasons s
             LEFT JOIN franchises f ON f.abbr = s.champion_abbr
@@ -15,6 +15,7 @@ def list_seasons(conn: sqlite3.Connection) -> list[dict]:
     return [
         {
             "season": r["season"],
+            "in_progress": bool(r["in_progress"]),
             "champion": team_ref(r, "t_") if r["champion_abbr"] else None,
             "mvp": player_ref(r, "p_") if r["mvp_player_id"] else None,
         }

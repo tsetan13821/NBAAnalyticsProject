@@ -9,7 +9,11 @@ class PlayerSummary(PlayerRef):
     position: str | None = Field(description="NBA.com listed position, e.g. 'G-F'", examples=["G"])
     first_season: Season
     last_season: Season
-    latest_team: TeamRef
+    latest_team: TeamRef = Field(description="Team in the player's last season in this data (last_season)")
+    current_team: TeamRef | None = Field(
+        description="Team the player is on now, from NBA.com rosters on meta.rosters_as_of; "
+        "null for players not on a roster (retired or free agents)"
+    )
 
 
 class SeasonStats(BaseModel):
@@ -46,6 +50,7 @@ class PlayerSeason(SeasonStats):
         description="NULL when below the archetype thresholds (20 games, 15 minutes per game, 12% usage)"
     )
     tier: Tier | None
+    in_progress: bool = Field(description="True for the season under way: the numbers are so far, not final")
 
 
 class CareerAverages(BaseModel):

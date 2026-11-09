@@ -6,6 +6,8 @@ Everything the API needs is precomputed here, so the API itself only does lookup
   - five most similar players per player-season
   - leave-one-season-out MVP predictions for every season
   - team standings and game-by-game records
+  - the season in progress (if fetched): stats so far and standings, marked in_progress and
+    left out of everything model-based (MVP tables, archetypes, similar players)
   - the next-game XGBoost model exported to plain JSON trees (no xgboost needed to serve it)
 
 Run from the repository root:
@@ -27,6 +29,8 @@ from src.models.mvp_prediction import run_loocv
 from src.nba_reference import CHAMPIONS, CONFERENCES, TEAM_COLORS, franchise_abbreviation, get_conference, normalize_name
 from src.paths import (
     CLUSTERED_PLAYERS,
+    CURRENT_SEASON_STANDINGS,
+    CURRENT_SEASON_STATS,
     DB_SCHEMA,
     GAME_MATCHUPS,
     MVP_DATA,
@@ -86,6 +90,14 @@ def build_franchises():
     return pd.DataFrame(rows).sort_values('abbr')
 
 
+def _rank_within_conference(df):
+    df['conference'] = [get_conference(t, s) for t, s in zip(df['team_abbr_then'], df['season'])]
+    df['conference_rank'] = (
+        df.groupby(['season', 'conference'])['win_pct'].rank(ascending=False, method='min').astype(int)
+    )
+    return df
+
+
 def build_team_seasons(mvp_data):
     df = (
         mvp_data[['FRANCHISE_ABBREVIATION', 'SEASON', 'TEAM_ABBREVIATION', 'WINS', 'LOSSES', 'WinPCT', 'DiffPointsPG']]
@@ -95,12 +107,37 @@ def build_team_seasons(mvp_data):
             'WINS': 'wins', 'LOSSES': 'losses', 'WinPCT': 'win_pct', 'DiffPointsPG': 'point_diff_pg',
         })
     )
-    df['conference'] = [get_conference(t, s) for t, s in zip(df['team_abbr_then'], df['season'])]
-    df['conference_rank'] = (
-        df.groupby(['season', 'conference'])['win_pct'].rank(ascending=False, method='min').astype(int)
-    )
+    df = _rank_within_conference(df)
     df['is_champion'] = (df['team_abbr'] == df['season'].map(CHAMPIONS)).astype(int)
     return df.sort_values(['season', 'team_abbr'])
+
+
+def build_current_team_seasons(standings):
+    """Standings so far for the season in progress (every team uses its current abbreviation)."""
+    df = standings.rename(columns={
+        'FRANCHISE_ABBREVIATION': 'team_abbr', 'SEASON': 'season',
+        'WINS': 'wins', 'LOSSES': 'losses', 'WinPCT': 'win_pct', 'DiffPointsPG': 'point_diff_pg',
+    })[['team_abbr', 'season', 'wins', 'losses', 'win_pct', 'point_diff_pg']]
+    df['team_abbr_then'] = df['team_abbr']
+    df = _rank_within_conference(df)
+    df['is_champion'] = 0
+    return df.sort_values('team_abbr')
+
+
+def load_current_season(completed_seasons):
+    """(stats, standings) for the season in progress, or (None, None) when it hasn't been fetched."""
+    if not (CURRENT_SEASON_STATS.exists() and CURRENT_SEASON_STANDINGS.exists()):
+        return None, None
+    stats, standings = pd.read_csv(CURRENT_SEASON_STATS), pd.read_csv(CURRENT_SEASON_STANDINGS)
+    seasons = set(stats['SEASON']) | set(standings['SEASON'])
+    if len(seasons) != 1:
+        raise ValueError(f"Current-season files mix seasons: {sorted(seasons)}")
+    season = seasons.pop()
+    if season <= max(completed_seasons):
+        # e.g. the season has ended and been added to the completed data, but the old file is still here
+        print(f"Ignoring {CURRENT_SEASON_STATS.name}: {season} is not after the last completed season")
+        return None, None
+    return stats, standings
 
 
 def build_player_seasons(raw_totals, clustered):
@@ -152,18 +189,24 @@ def build_players(raw_totals, player_seasons, bio):
     players['college'] = bio['COLLEGE'].replace({'None': None, '': None})
     for col in ('DRAFT_YEAR', 'DRAFT_ROUND', 'DRAFT_NUMBER'):
         players[col.lower()] = bio[col].astype('Int64')
+    players['current_team_abbr'] = bio['CURRENT_TEAM']
     return players.rename_axis('player_id').reset_index()
 
 
-def build_seasons(mvp_data):
+def build_seasons(mvp_data, current_season=None):
     seasons = sorted(mvp_data['SEASON'].unique())
     mvp_ids = mvp_data.loc[mvp_data['IS_MVP'] == 1].set_index('SEASON')['PLAYER_ID']
-    return pd.DataFrame({
+    df = pd.DataFrame({
         'season': seasons,
         'start_year': [int(s[:4]) for s in seasons],
         'champion_abbr': [CHAMPIONS.get(s) for s in seasons],
         'mvp_player_id': [mvp_ids.get(s) for s in seasons],
+        'in_progress': 0,
     })
+    if current_season:
+        current = {'season': current_season, 'start_year': int(current_season[:4]), 'in_progress': 1}
+        df = pd.concat([df, pd.DataFrame([current])], ignore_index=True)
+    return df
 
 
 def build_percentiles(player_seasons, players):
@@ -286,17 +329,24 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
     clustered = pd.read_csv(CLUSTERED_PLAYERS)
     games = pd.read_csv(GAME_MATCHUPS)
     bio = pd.read_csv(PLAYER_BIO)
+    current_stats, current_standings = load_current_season(set(mvp_data['SEASON']))
+    current_season = current_stats['SEASON'].iloc[0] if current_stats is not None else None
 
-    player_seasons = build_player_seasons(raw_totals, clustered)
-    players = build_players(raw_totals, player_seasons, bio)
+    # Player tables cover the season in progress too; the model inputs above (mvp_data, clustered) don't.
+    all_totals = raw_totals if current_stats is None else pd.concat([raw_totals, current_stats], ignore_index=True)
+    player_seasons = build_player_seasons(all_totals, clustered)
+    players = build_players(all_totals, player_seasons, bio)
+    team_seasons = build_team_seasons(mvp_data)
+    if current_standings is not None:
+        team_seasons = pd.concat([team_seasons, build_current_team_seasons(current_standings)], ignore_index=True)
     mvp_candidates, mvp_seasons = build_mvp_tables()
     next_game_metrics = json.loads(NEXT_GAME_METRICS.read_text())
 
     tables = {  # insertion order respects foreign keys
         'franchises': build_franchises(),
         'players': players,
-        'seasons': build_seasons(mvp_data),
-        'team_seasons': build_team_seasons(mvp_data),
+        'seasons': build_seasons(mvp_data, current_season),
+        'team_seasons': team_seasons,
         'player_seasons': player_seasons,
         'player_percentiles': build_percentiles(player_seasons, players),
         'similar_players': build_similar_players(player_seasons),
@@ -307,10 +357,13 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
     meta = {
         'built_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
         'first_season': tables['seasons']['season'].min(),
-        'last_season': tables['seasons']['season'].max(),
+        'last_season': mvp_data['SEASON'].max(),  # last completed season
+        'current_season': current_season or '',
+        'current_season_as_of': str(current_standings['AS_OF'].iloc[0]) if current_standings is not None else '',
         'mvp_correct': str(int(mvp_seasons['correct'].sum())),
         'mvp_seasons': str(len(mvp_seasons)),
         'next_game_metrics': json.dumps(next_game_metrics),
+        'rosters_as_of': str(bio['ROSTERS_AS_OF'].max()),
     }
     tables['meta'] = pd.DataFrame({'key': list(meta), 'value': list(meta.values())})
 

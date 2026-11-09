@@ -1,6 +1,10 @@
 data_collection:
   start_season: "2000-01" # 2000 to current year gives a great sample size (around 450-500 players/season * 24 seasons ~ 11,000-12,000 rows)
-  end_season: "2025-26"
+  end_season: "2025-26"        # last completed season: the models train and are evaluated on start..end only
+  # The season under way. Its stats so far are fetched separately (src/data_pipeline/fetch_current_season.py)
+  # and shown on player pages, but never used by the models. Set to null in the off-season; when it ends,
+  # move it into end_season and rerun the full pipeline.
+  current_season: "2026-27"
   season_type: "Regular Season"
   min_games_played: 20 # Filter out players with very few games to reduce noise
 
