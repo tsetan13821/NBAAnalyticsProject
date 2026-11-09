@@ -20,7 +20,8 @@ An end-to-end data science and machine learning platform focused on NBA player s
   - **MVP Prediction**: XGBoost model using Leave-One-Season-Out Cross Validation (LOOCV), picking the actual MVP in **19 of 26 seasons (73.1%)**.
   - **All-Star Prediction**: Position-constrained, hand-weighted impact score that builds Eastern and Western conference rosters (6G / 6F / 3C).
   - **Player Archetype Clustering**: Standardized composite scores assign each player-season a playstyle, and 1D K-Means splits each into tiers (`Scorer`, `Playmaker`, `Rebounder`, `Defensive Player`) and performance tiers (`Elite`, `Very Good`, `Average`).
-  - **Next Game Prediction**: XGBoost game outcome forecast from season-to-date overall, home and road win percentages (about as accurate as picking the team with the better record).
+  - **Game Predictor** (v2): win probability and predicted margin for every game of the season in progress, from Elo, net rating, form, rest and travel, and the official NBA injury report, with each player weighted by what he is worth to his team. On a held-out season it called **69.4%** of winners (Elo alone 67.6%, better record 67.0%), and the web app lets you sit or play any player to see how the prediction moves.
+  - **Next Game Prediction** (Streamlit): XGBoost game outcome forecast from season-to-date overall, home and road win percentages (about as accurate as picking the team with the better record).
 - **Interactive Streamlit Dashboard**: Full visual analytics web application featuring per-game player comparisons, franchise history, live MVP model prediction runners, and clustering visualizations.
 
 ---
@@ -40,7 +41,8 @@ NBAAnalyticsProject/
 │   ├── paths.py / nba_reference.py / features.py  # Shared paths, reference data, feature helpers
 │   ├── data_collection.py  # Script to ingest multi-season stats from NBA API
 │   ├── data_pipeline/      # Data pipeline scripts (standings fetch, MVP dataset build)
-│   └── models/             # Machine learning implementations (MVP, All-Star, Clustering, Next Game)
+│   ├── models/             # Machine learning implementations (MVP, All-Star, Clustering, Next Game)
+│   └── game_model/         # v2 game predictor: game logs, injury reports, player value, training, live predictions
 ├── backend/                # v2 FastAPI service (app/, tests/, Dockerfile, openapi.json)
 ├── frontend/               # v2 Next.js web app (src/app routes, components, typed API client)
 ├── docker-compose.yml      # Runs the API and web app together
@@ -97,6 +99,12 @@ To refresh just the season in progress and current rosters (a few NBA.com reques
 ```bash
 python -m src.data_pipeline.fetch_current_season
 python -m src.data_pipeline.fetch_player_bio
+python -m src.export_db
+```
+
+To refresh the game predictions (latest results, schedule and injury report), then rebuild the database:
+```bash
+python -m src.game_model.live
 python -m src.export_db
 ```
 

@@ -1,0 +1,78 @@
+name: refresh games
+
+# Keeps the game predictor live: downloads the latest results, schedule and injury report, re-predicts
+# the season in progress, and commits the data if it changed. A host that deploys on push rebuilds the
+# serving database (src.export_db) from these files.
+#
+# GitHub runs scheduled workflows only from the default branch, can start them several minutes late,
+# and disables them after 60 days without activity in the repository.
+
+on:
+  schedule:
+    # UTC. During the season (Eastern = UTC-5 in winter, UTC-4 from March):
+    #   15:17  ~10am ET  last night's results, today's first report
+    #   18:17  ~1pm ET   midday report
+    #   22:17  ~5pm ET   the report most teams have submitted by
+    #   23:47  ~6:45pm ET just before the early games
+    #   02:17  ~9pm ET   before the late West Coast games
+    - cron: "17 15,18,22 * * *"
+    - cron: "47 23 * * *"
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One refresh at a time; a run that starts while another is going waits for it.
+concurrency:
+  group: refresh-games
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # The injury report PDFs aren't committed (data/cache/ is ignored). Without this, every run would
+      # download the whole season's reports again.
+      - name: Restore downloaded injury reports
+        uses: actions/cache@v4
+        with:
+          path: data/cache
+          key: nba-cache-${{ github.run_id }}
+          restore-keys: nba-cache-
+
+      # A download that fails (NBA.com is often slow, or blocks cloud servers) is skipped and listed in
+      # live_meta.json under fetch_failed; the predictions are rebuilt from the files already committed.
+      - name: Refresh the season in progress
+        run: python -m src.game_model.live
+
+      # The same build the API's Docker image runs: don't commit data it can't serve.
+      - name: Check the serving database builds
+        run: python -m src.export_db
+
+      - name: Commit changed data
+        run: |
+          git add data/raw/games data/raw/injuries data/processed/game_predictions.csv \
+                  data/processed/game_players.csv data/processed/live_meta.json
+          # live_meta.json changes on every run (its timestamp); commit only when the games did
+          if git diff --cached --quiet -- . ':!data/processed/live_meta.json'; then
+            echo "No new results or statuses."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data: refresh game predictions [skip ci]"
+          git pull --rebase
+          git push
