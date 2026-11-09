@@ -42,7 +42,9 @@ NBAAnalyticsProject/
 │   ├── data_pipeline/      # Data pipeline scripts (standings fetch, MVP dataset build)
 │   └── models/             # Machine learning implementations (MVP, All-Star, Clustering, Next Game)
 ├── backend/                # v2 FastAPI service (app/, tests/, Dockerfile, openapi.json)
-├── docs/ARCHITECTURE.md    # v2 design, data model, API and roadmap
+├── frontend/               # v2 Next.js web app (src/app routes, components, typed API client)
+├── docker-compose.yml      # Runs the API and web app together
+├── docs/ARCHITECTURE.md    # v2 design, data model, API, frontend and roadmap
 ├── streamlit_app/          # Streamlit UI dashboard
 │   ├── app.py              # Main dashboard entrypoint
 │   ├── pages/              # Dashboard pages (Player Stats, Clusters, Model Predictions)
@@ -106,15 +108,26 @@ uvicorn app.main:app --reload
 ```
 Open http://localhost:8000/docs for interactive API documentation.
 
-Or run it in Docker without a local Python setup (the image builds the database itself):
+### 6. Run the Web App (v2)
+With the API running, start the Next.js app from the `frontend/` folder (Node.js 24):
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open http://localhost:3000. The app reads the API address from `API_URL` (default `http://localhost:8000`); copy `.env.example` to `.env.local` to change it.
+
+### 7. Or Run Everything in Docker
+No local Python or Node setup needed. The API image builds the database itself.
 ```bash
 docker compose up --build
+# Web app: http://localhost:3000    API docs: http://localhost:8000/docs
 
-# If port 8000 is already in use, choose another host port
-API_PORT=8001 docker compose up --build
+# If a port is already in use, choose other host ports
+WEB_PORT=3001 API_PORT=8001 docker compose up --build
 ```
 
-### 6. Run Tests
+### 8. Run Tests
 ```bash
 pip install -r requirements-dev.txt
 pytest
@@ -124,10 +137,16 @@ cd backend
 pip install -r requirements-dev.txt
 ruff check .
 pytest
+
+# Web app: types, lint, unit tests
+cd ../frontend
+npm run typecheck
+npm run lint
+npm test
 ```
 Tests run on the committed datasets (no NBA API calls) and also run automatically on GitHub Actions for every push and pull request.
 
-If you change the API on purpose, regenerate its committed schema with `python -m scripts.export_openapi` from `backend/`.
+If you change the API on purpose, regenerate its committed schema with `python -m scripts.export_openapi` from `backend/`, then the frontend's types with `npm run gen:api` from `frontend/`.
 
 ---
 

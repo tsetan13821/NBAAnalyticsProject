@@ -116,6 +116,48 @@ backend/app/
 
 `backend/Dockerfile` has two stages. The first installs the pipeline requirements and runs `python -m src.export_db` on the committed data. The second starts from a clean `python:3.11-slim`, installs only FastAPI, Pydantic and Uvicorn, and copies in the app and the built database. Training libraries never reach the runtime image. The container runs as a non-root user and has a health check.
 
+## Frontend
+
+The web app lives in `frontend/`: Next.js 16 (App Router, React Server Components), TypeScript, Tailwind CSS 4, shadcn/ui on Base UI, and ECharts.
+
+| Route | Page |
+| :--- | :--- |
+| `/` | Overview: headline model results and links to each section |
+| `/mvp` | MVP model accuracy overall and by era, and a card for every season (pick vs actual winner) |
+| `/mvp/{season}` | One season's race: model pick vs actual MVP, a chart of each candidate's share of the model score, full candidate table, season picker |
+
+### Code layout
+
+```
+frontend/src/
+├── app/                 # Routes (page.tsx per route), root layout, error and not-found pages
+├── components/
+│   ├── ui/              # shadcn/ui primitives (card, table, select, ...)
+│   ├── charts/          # ECharts wrapper and chart components (client-side)
+│   └── mvp/             # MVP page components
+└── lib/
+    ├── api/client.ts    # Typed, cached API access (server-side only)
+    ├── api/schema.ts    # Generated from backend/openapi.json (npm run gen:api)
+    ├── format.ts        # Number, season and name formatting
+    └── theme.ts         # Dark/light theme without a flash on load
+```
+
+### Data fetching
+
+- **One typed contract.** `npm run gen:api` turns `backend/openapi.json` into TypeScript types, and `openapi-fetch` uses them, so paths, parameters and response fields are all checked at compile time. CI regenerates the types and fails if they differ from the committed file.
+- **Server-side only.** Pages are React Server Components that call the API from the Next.js server through `API_URL`. The browser never talks to the API directly, so no API URL or CORS setup reaches the client.
+- **Fetched at request time, cached for an hour.** With Next.js Cache Components, every page is a prerendered static shell (layout, headings, skeletons) and the data streams in. Each API getter awaits `connection()` and then calls a `"use cache"` function with `cacheLife("hours")`. The result:
+  - `next build` never needs the API running, so CI and the Docker image build the frontend on their own.
+  - Repeat visits are served from the cache.
+- **Errors.** If the API is unreachable, the error boundary shows a retry page. An unknown season renders the not-found page with a `noindex` tag. The HTTP status stays 200, because the status line is sent with the static shell before the season is checked. This is a known trade-off of streaming.
+
+### Design
+
+- **Theme.** Dark is the default, and the light theme is a toggle. Both are CSS variables in `globals.css`. Orange (`--brand`) marks the real MVP and active elements; green and red (`--hit`, `--miss`) mark correct and incorrect picks. A small inline script applies the saved theme before the first paint, so there is no flash on load.
+- **Charts** are ECharts with only the bar chart, grid and tooltip modules registered, and they render as SVG. Colours are read from the same CSS variables. They are converted to RGB first, because ECharts can't parse `oklch()`.
+- **Headshots** come from the NBA CDN through the Next.js image optimizer. Players without a photo fall back to their initials.
+- **Teams** are shown as an abbreviation badge in the team's colour (text colour chosen for contrast) rather than hotlinked logos.
+
 ## Testing and CI
 
 - **Pipeline:** unit tests for helpers, integrity checks on the committed datasets, model regression guards (MVP accuracy, tier ordering, no look-ahead in game features).
@@ -127,12 +169,18 @@ backend/app/
   - cache and CORS headers
   - unit tests for the tree evaluator, and parity with XGBoost
   - a snapshot test that fails if the API schema changes without `backend/openapi.json` being regenerated
-- **Frontend (planned):** type checking, linting, component tests (Vitest), end-to-end tests (Playwright) against the full stack in Docker Compose.
+- **Frontend:** type checking, ESLint, and Vitest + Testing Library tests for:
+  - formatting helpers and colour contrast
+  - navigation state
+  - the MVP components and the chart option builder
 
-GitHub Actions runs three jobs on every push to `main` and every pull request:
+  End-to-end tests (Playwright) are planned for phase 4.
+
+GitHub Actions runs four jobs on every push to `main` and every pull request:
 1. pipeline tests
 2. API lint (ruff) and tests, after building the database
-3. a Docker build with a health-check smoke test
+3. web: a check that the generated API types are current, then type check, lint, unit tests and a production build
+4. Docker Compose: builds both images, waits for their health checks, and checks a page renders with real data
 
 ## Roadmap
 
@@ -140,7 +188,7 @@ GitHub Actions runs three jobs on every push to `main` and every pull request:
 | :--- | :--- | :--- |
 | 0. Foundations | Serving database export, official player bio data, this document | Done |
 | 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
-| 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Next |
-| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | Planned |
+| 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Done |
+| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | Next |
 | 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |
