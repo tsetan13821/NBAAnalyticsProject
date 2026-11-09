@@ -114,11 +114,12 @@ The API lives in `backend/`. Interactive documentation is served at `/docs`, and
 | `GET /api/v1/players/compare?ids=&ids=&season=&peer_group=ALL\|POSITION` | Stats and percentiles for 2 to 4 players |
 | `GET /api/v1/mvp` | Model accuracy overall, by era and per season |
 | `GET /api/v1/mvp/{season}?limit=` | MVP race: ranked candidates with scores and stats |
-| `GET /api/v1/teams` | All 30 franchises with their latest record |
-| `GET /api/v1/teams/{abbr}` | Franchise history and championships |
+| `GET /api/v1/teams` | All 30 franchises with their latest record and titles |
+| `GET /api/v1/teams/{abbr}` | Franchise history: every season's record, rank and point differential, championships, and MVPs won by its players |
+| `GET /api/v1/teams/{abbr}/leaders?by=&limit=` | Career leaders with the franchise in points, rebounds, assists or games, since the first season in the data |
 | `GET /api/v1/teams/{abbr}/roster?season=` | Players on a team in a season |
 | `GET /api/v1/teams/{abbr}/form?season=` | Game-by-game record and running win % (2020-21 onward) |
-| `GET /api/v1/games/upcoming` | Predictions for the coming week, with key absences and the injury report's time |
+| `GET /api/v1/games/upcoming?team=` | Predictions for the coming week (optionally one team's), with key absences and the injury report's time |
 | `GET /api/v1/games/results?team=&limit=&offset=` | Games played this season as predicted beforehand, newest first, with the track record (accuracy, log loss, confidence bins) |
 | `GET /api/v1/games/{game_id}?out=&in=` | One game: prediction, its breakdown in points per input group, and both rosters; `out`/`in` force players out of or into the game (what-if) |
 | `GET /api/v1/games/model` | The game model's inputs and weights, injury play rates, and its full evaluation |
@@ -172,6 +173,8 @@ The web app lives in `frontend/`: Next.js 16 (App Router, React Server Component
 | `/games/{id}` | One game: win chance, predicted margin, the margin broken down by input group (a diverging bar chart, away left and home right), and both rosters with value, minutes, injury status and chance of playing. Upcoming games have Report / Sits / Plays controls for each player; the choices live in the URL (`?out=1629029&in=203999`) |
 | `/games/results` | Every game played this season with the prediction and final score, filterable by team, 24 per page |
 | `/games/method` | How the game predictor works: team strength, player value, the injury report, the model and its weights, held-out, walk-forward, ablation and calibration results, and limitations |
+| `/teams` | This season's standings, East and West (record, games behind, point differential, titles), and every champion since 2000-01 |
+| `/teams/{abbr}` | One franchise on a band of its colours: this season's record, the next games and latest results from the game predictor, a win % or point-differential chart and a table of every season (titles and MVPs marked), the roster of any season (`?season=`), and the career leaders in a chosen stat (`?by=`) |
 | `/compare` | Two to four players side by side in a season they all played: every stat with its percentile (against all players or the same position), grouped into scoring, playmaking, rebounding and defence, and overall impact, with the leader in each row and a count of categories led. The comparison appears when Compare is pressed and hides again when the lineup changes. The lineup, season, peer group and whether the comparison is shown live in the URL (`?ids=2544,201939&season=2015-16&peers=position&show=1`), so shared links open straight on the comparison; each open slot in the lineup opens a picker: a search box plus suggestions (the player's closest matches, or the top of last season's MVP race) |
 
 ### Code layout
@@ -227,12 +230,14 @@ frontend/src/
   - search relevance, accent handling and pagination
   - 404 and 422 cases
   - game predictions: list and detail agree, the breakdown sums to the margin, sitting a star lowers his team's chance, what-if validation
+  - franchises: titles add up to one champion per season, MVPs land on the right team, leaders are ranked and their averages match their totals
   - cache and CORS headers
   - a snapshot test that fails if the API schema changes without `backend/openapi.json` being regenerated
 - **Frontend:** type checking, ESLint, and Vitest + Testing Library tests for:
   - formatting helpers and colour contrast
   - navigation state
   - the game predictor's what-if URL state and wording
+  - the franchise pages: standings order and games behind, URL state for the roster season and leader stat, the season table and the history chart
   - the MVP components and the chart option builder
 
   End-to-end tests (Playwright) are planned for phase 4.
@@ -250,6 +255,6 @@ GitHub Actions runs four jobs on every push to `main` and every pull request:
 | 0. Foundations | Serving database export, official player bio data, this document | Done |
 | 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
 | 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Done |
-| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | In progress (search, profile, compare and game predictor done) |
+| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | Done |
 | 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |

@@ -20,6 +20,7 @@ describe("activeHref", () => {
     expect(activeHref("/mvp/method")).toBe("/mvp");
     expect(activeHref("/players/203999")).toBe("/players");
     expect(activeHref("/games/0022600150")).toBe("/games");
+    expect(activeHref("/teams/BOS")).toBe("/teams");
   });
 
   it("does not match on a shared prefix alone", () => {

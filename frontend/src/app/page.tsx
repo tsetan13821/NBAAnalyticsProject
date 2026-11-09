@@ -36,7 +36,11 @@ const CONTENTS: { title: string; description: string; href?: string }[] = [
     description: "Team strength, player value, the injury report, and how the model was tested on unseen seasons.",
     href: "/games/method",
   },
-  { title: "Franchises", description: "Records, rosters and championships for all 30 teams." },
+  {
+    title: "Franchises",
+    description: "This season's standings, and for each of the 30 teams its record, rosters, titles and career leaders since 2000.",
+    href: "/teams",
+  },
 ];
 
 export default function HomePage() {

@@ -276,6 +276,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/teams/{abbr}/leaders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The franchise's career leaders since the first season in the data */
+        get: operations["get_leaders_api_v1_teams__abbr__leaders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/teams/{abbr}/roster": {
         parameters: {
             query?: never;
@@ -535,6 +552,56 @@ export interface components {
             win_pct: number;
             /** Won */
             won: boolean;
+        };
+        /** FranchiseLeader */
+        FranchiseLeader: {
+            /** Assists */
+            assists: number;
+            /** First Season */
+            first_season: string;
+            /** Games */
+            games: number;
+            /** Last Season */
+            last_season: string;
+            /**
+             * On Roster
+             * @description On the franchise's roster today
+             */
+            on_roster: boolean;
+            player: components["schemas"]["PlayerRef"];
+            /** Points */
+            points: number;
+            /**
+             * Pts Pg
+             * @description Points per game over his seasons with the franchise
+             */
+            pts_pg: number;
+            /** Rebounds */
+            rebounds: number;
+            /** Seasons */
+            seasons: number;
+        };
+        /** FranchiseLeaders */
+        FranchiseLeaders: {
+            /**
+             * By
+             * @enum {string}
+             */
+            by: "points" | "rebounds" | "assists" | "games";
+            /** Leaders */
+            leaders: components["schemas"]["FranchiseLeader"][];
+            /**
+             * Since
+             * @description Totals count from this season (the first in the data)
+             */
+            since: string;
+            team: components["schemas"]["TeamRef"];
+        };
+        /** FranchiseMvp */
+        FranchiseMvp: {
+            player: components["schemas"]["PlayerRef"];
+            /** Season */
+            season: string;
         };
         /** GameDetail */
         GameDetail: {
@@ -1246,9 +1313,19 @@ export interface components {
              * @enum {string}
              */
             conference: "East" | "West";
+            /**
+             * First Season
+             * @description First season in the data
+             */
+            first_season: string;
             latest: components["schemas"]["TeamRecord"];
             /** Logo Url */
             logo_url: string;
+            /**
+             * Mvps
+             * @description MVP awards won by the franchise's players, oldest first
+             */
+            mvps: components["schemas"]["FranchiseMvp"][];
             /**
              * Name
              * @example Oklahoma City Thunder
@@ -1261,10 +1338,18 @@ export interface components {
              * @example #007AC1
              */
             primary_color: string;
-            /** Seasons */
+            /**
+             * Seasons
+             * @description Oldest first
+             */
             seasons: components["schemas"]["TeamSeason"][];
             /** Secondary Color */
             secondary_color: string;
+            /**
+             * Titles
+             * @description Championships since the first season in the data
+             */
+            titles: number;
             /** Total Losses */
             total_losses: number;
             /** Total Wins */
@@ -1299,6 +1384,11 @@ export interface components {
             in_progress: boolean;
             /** Losses */
             losses: number;
+            /**
+             * Point Diff Pg
+             * @description Points scored minus points allowed, per game
+             */
+            point_diff_pg: number;
             /** Season */
             season: string;
             /** Win Pct */
@@ -1346,11 +1436,17 @@ export interface components {
             is_champion: boolean;
             /** Losses */
             losses: number;
-            /** Point Diff Pg */
+            /**
+             * Point Diff Pg
+             * @description Points scored minus points allowed, per game
+             */
             point_diff_pg: number;
             /** Season */
             season: string;
-            /** Team Abbr Then */
+            /**
+             * Team Abbr Then
+             * @description The abbreviation the franchise used that season, e.g. 'SEA'
+             */
             team_abbr_then: string;
             /** Win Pct */
             win_pct: number;
@@ -1404,6 +1500,11 @@ export interface components {
             primary_color: string;
             /** Secondary Color */
             secondary_color: string;
+            /**
+             * Titles
+             * @description Championships since the first season in the data
+             */
+            titles: number;
         };
         /** TrackRecord */
         TrackRecord: {
@@ -1552,7 +1653,10 @@ export interface operations {
     };
     upcoming_games_api_v1_games_upcoming_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only this team's games */
+                team?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1566,6 +1670,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpcomingGames"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1993,6 +2106,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeamForm"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_leaders_api_v1_teams__abbr__leaders_get: {
+        parameters: {
+            query?: {
+                /** @description Rank by total points, rebounds, assists, games */
+                by?: "points" | "rebounds" | "assists" | "games";
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                abbr: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FranchiseLeaders"];
                 };
             };
             /** @description Not found */

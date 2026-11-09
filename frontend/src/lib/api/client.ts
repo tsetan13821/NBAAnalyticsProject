@@ -22,6 +22,13 @@ export type MvpCandidate = Schemas["MvpCandidate"];
 export type PlayerRef = Schemas["PlayerRef"];
 export type TeamRef = Schemas["TeamRef"];
 export type TeamSummary = Schemas["TeamSummary"];
+export type TeamDetail = Schemas["TeamDetail"];
+export type TeamSeason = Schemas["TeamSeason"];
+export type Roster = Schemas["Roster"];
+export type RosterPlayer = Schemas["RosterPlayer"];
+export type FranchiseLeaders = Schemas["FranchiseLeaders"];
+export type FranchiseLeader = Schemas["FranchiseLeader"];
+export type LeaderStat = FranchiseLeaders["by"];
 export type PlayerSummary = Schemas["PlayerSummary"];
 export type PlayerProfile = Schemas["PlayerProfile"];
 export type PlayerSeason = Schemas["PlayerSeason"];
@@ -96,6 +103,12 @@ async function fetchMeta() {
   return call(() => api.GET("/api/v1/meta"));
 }
 
+async function fetchSeasons() {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/seasons"));
+}
+
 async function fetchMvpOverview() {
   "use cache";
   cacheLife("hours");
@@ -112,6 +125,24 @@ async function fetchTeams() {
   "use cache";
   cacheLife("hours");
   return call(() => api.GET("/api/v1/teams"));
+}
+
+async function fetchTeam(abbr: string) {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/teams/{abbr}", { params: { path: { abbr } } }));
+}
+
+async function fetchRoster(abbr: string, season?: string) {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/teams/{abbr}/roster", { params: { path: { abbr }, query: { season } } }));
+}
+
+async function fetchLeaders(abbr: string, by: LeaderStat) {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/teams/{abbr}/leaders", { params: { path: { abbr }, query: { by, limit: 10 } } }));
 }
 
 async function fetchPlayers(query: PlayerQuery) {
@@ -142,10 +173,10 @@ async function fetchComparison(ids: number[], season: string, peerGroup: "ALL" |
   );
 }
 
-async function fetchUpcomingGames() {
+async function fetchUpcomingGames(team?: string) {
   "use cache";
   cacheLife("hours");
-  return call(() => api.GET("/api/v1/games/upcoming"));
+  return call(() => api.GET("/api/v1/games/upcoming", { params: { query: { team } } }));
 }
 
 async function fetchGameResults(limit: number, offset: number, team?: string) {
@@ -177,6 +208,12 @@ export async function getMeta(): Promise<Meta> {
   return required(await fetchMeta(), "Meta");
 }
 
+/** Every season in the data with its champion and MVP, oldest first. */
+export async function getSeasons(): Promise<SeasonInfo[]> {
+  await connection();
+  return required(await fetchSeasons(), "Seasons");
+}
+
 export async function getMvpOverview(): Promise<MvpOverview> {
   await connection();
   return required(await fetchMvpOverview(), "MVP overview");
@@ -191,6 +228,24 @@ export async function getMvpRace(season: string): Promise<MvpRace | null> {
 export async function getTeams(): Promise<TeamSummary[]> {
   await connection();
   return required(await fetchTeams(), "Teams");
+}
+
+/** `null` when there is no such franchise. */
+export async function getTeam(abbr: string): Promise<TeamDetail | null> {
+  await connection();
+  return fetchTeam(abbr);
+}
+
+/** `null` when the team has no players in that season. Defaults to the latest season. */
+export async function getRoster(abbr: string, season?: string): Promise<Roster | null> {
+  await connection();
+  return fetchRoster(abbr, season);
+}
+
+/** The franchise's ten career leaders in a stat; `null` when there is no such franchise. */
+export async function getLeaders(abbr: string, by: LeaderStat): Promise<FranchiseLeaders | null> {
+  await connection();
+  return fetchLeaders(abbr, by);
 }
 
 export async function searchPlayers(query: PlayerQuery): Promise<PlayerPage> {
@@ -220,9 +275,10 @@ export async function getComparison(
   return fetchComparison(ids, season, peerGroup);
 }
 
-export async function getUpcomingGames(): Promise<UpcomingGames> {
+/** The coming week's games; only one team's when `team` is given. */
+export async function getUpcomingGames(team?: string): Promise<UpcomingGames> {
   await connection();
-  return required(await fetchUpcomingGames(), "Upcoming games");
+  return required(await fetchUpcomingGames(team), "Upcoming games");
 }
 
 export async function getGameResults(limit: number, offset = 0, team?: string): Promise<GameResults> {
