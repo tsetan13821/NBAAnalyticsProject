@@ -21,11 +21,15 @@ Model = Annotated[GameModel, Depends(get_model)]
 
 
 @router.get("/upcoming", response_model=UpcomingGames, summary="Predictions for the coming week")
-def upcoming_games(conn: DbConn, request: Request):
+def upcoming_games(
+    conn: DbConn,
+    request: Request,
+    team: Annotated[str | None, Query(min_length=2, max_length=3, description="Only this team's games")] = None,
+):
     live = json.loads(request.app.state.db_meta.get("game_live") or "{}")
     return {
         "season": live.get("season"), "as_of": live.get("as_of"), "injury_report": live.get("injury_report"),
-        "games": games_repo.list_upcoming(conn),
+        "games": games_repo.list_upcoming(conn, team.upper() if team else None),
     }
 
 

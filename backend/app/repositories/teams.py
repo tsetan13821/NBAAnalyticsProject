@@ -4,7 +4,9 @@ from app.repositories.refs import player_columns, player_ref, team_columns, team
 
 _TEAM_SELECT = f"""
     SELECT {team_columns('f', 't_')}, f.city, f.nickname, f.conference,
-           ts.season AS latest_season, ts.wins, ts.losses, ts.win_pct, ts.conference_rank, s.in_progress
+           ts.season AS latest_season, ts.wins, ts.losses, ts.win_pct, ts.conference_rank, ts.point_diff_pg,
+           s.in_progress,
+           (SELECT COUNT(*) FROM team_seasons c WHERE c.team_abbr = f.abbr AND c.is_champion = 1) AS titles
     FROM franchises f
     JOIN team_seasons ts ON ts.team_abbr = f.abbr
      AND ts.season = (SELECT MAX(season) FROM team_seasons WHERE team_abbr = f.abbr)
@@ -21,8 +23,9 @@ def _summary(row: sqlite3.Row) -> dict:
         "latest": {
             "season": row["latest_season"], "wins": row["wins"], "losses": row["losses"],
             "win_pct": row["win_pct"], "conference_rank": row["conference_rank"],
-            "in_progress": bool(row["in_progress"]),
+            "point_diff_pg": row["point_diff_pg"], "in_progress": bool(row["in_progress"]),
         },
+        "titles": row["titles"],
     }
 
 
@@ -48,13 +51,58 @@ def get_team(conn: sqlite3.Connection, abbr: str) -> dict | None:
             (abbr,),
         )
     ]
+    mvps = conn.execute(
+        f"""SELECT s.season, {player_columns('p', 'p_')}
+            FROM seasons s
+            JOIN player_seasons ps ON ps.player_id = s.mvp_player_id AND ps.season = s.season
+            JOIN players p ON p.player_id = s.mvp_player_id
+            WHERE ps.team_abbr = ? ORDER BY s.season""",
+        (abbr,),
+    )
     return {
         **_summary(row),
+        "first_season": seasons[0]["season"],
         "championships": [s["season"] for s in seasons if s["is_champion"]],
         "total_wins": sum(s["wins"] for s in seasons),
         "total_losses": sum(s["losses"] for s in seasons),
         "seasons": seasons,
+        "mvps": [{"season": m["season"], "player": player_ref(m, "p_")} for m in mvps],
     }
+
+
+# Totals rebuilt from per-game averages (stored unrounded, so they are exact). A player traded during a
+# season appears once, with the team he finished it with, so his whole season counts for that team.
+_LEADER_ORDER = {"points": "points", "rebounds": "rebounds", "assists": "assists", "games": "games"}
+
+
+def get_leaders(conn: sqlite3.Connection, abbr: str, by: str, limit: int) -> list[dict]:
+    order = _LEADER_ORDER[by]  # a fixed set of column names, never user text
+    rows = conn.execute(
+        f"""SELECT {player_columns('p', 'p_')}, p.current_team_abbr IS ps.team_abbr AS on_roster,
+                   COUNT(*) AS seasons, MIN(ps.season) AS first_season, MAX(ps.season) AS last_season,
+                   SUM(ps.games) AS games, SUM(ps.pts_pg * ps.games) AS points,
+                   SUM(ps.reb_pg * ps.games) AS rebounds, SUM(ps.ast_pg * ps.games) AS assists
+            FROM player_seasons ps JOIN players p USING (player_id)
+            WHERE ps.team_abbr = ?
+            GROUP BY ps.player_id
+            ORDER BY {order} DESC, games DESC, ps.player_id
+            LIMIT ?""",
+        (abbr, limit),
+    ).fetchall()
+    return [
+        {
+            "player": player_ref(r, "p_"), "seasons": r["seasons"],
+            "first_season": r["first_season"], "last_season": r["last_season"], "games": r["games"],
+            "points": round(r["points"]), "rebounds": round(r["rebounds"]), "assists": round(r["assists"]),
+            "pts_pg": round(r["points"] / r["games"], 1) if r["games"] else 0.0,
+            "on_roster": bool(r["on_roster"]),
+        }
+        for r in rows
+    ]
+
+
+def first_season(conn: sqlite3.Connection, abbr: str) -> str | None:
+    return conn.execute("SELECT MIN(season) FROM team_seasons WHERE team_abbr = ?", (abbr,)).fetchone()[0]
 
 
 _ROSTER_FIELDS = ("games", "min_pg", "pts_pg", "reb_pg", "ast_pg", "ts_pct", "archetype", "tier")

@@ -69,8 +69,14 @@ def _summaries(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> list[dict]:
     return [_summary(r, absences.get(r["game_id"], [])) for r in rows]
 
 
-def list_upcoming(conn: sqlite3.Connection) -> list[dict]:
-    rows = conn.execute(f"{_GAME_SELECT} WHERE g.played = 0 ORDER BY g.game_date, g.tip_et, g.game_id").fetchall()
+def list_upcoming(conn: sqlite3.Connection, team: str | None = None) -> list[dict]:
+    where, params = "g.played = 0", []
+    if team:
+        where += " AND ? IN (g.home_abbr, g.away_abbr)"
+        params.append(team)
+    rows = conn.execute(
+        f"{_GAME_SELECT} WHERE {where} ORDER BY g.game_date, g.tip_et, g.game_id", params
+    ).fetchall()
     return _summaries(conn, rows)
 
 

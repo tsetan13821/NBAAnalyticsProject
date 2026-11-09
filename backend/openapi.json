@@ -565,6 +565,119 @@
         "title": "FormGame",
         "type": "object"
       },
+      "FranchiseLeader": {
+        "properties": {
+          "assists": {
+            "title": "Assists",
+            "type": "integer"
+          },
+          "first_season": {
+            "title": "First Season",
+            "type": "string"
+          },
+          "games": {
+            "title": "Games",
+            "type": "integer"
+          },
+          "last_season": {
+            "title": "Last Season",
+            "type": "string"
+          },
+          "on_roster": {
+            "description": "On the franchise's roster today",
+            "title": "On Roster",
+            "type": "boolean"
+          },
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "points": {
+            "title": "Points",
+            "type": "integer"
+          },
+          "pts_pg": {
+            "description": "Points per game over his seasons with the franchise",
+            "title": "Pts Pg",
+            "type": "number"
+          },
+          "rebounds": {
+            "title": "Rebounds",
+            "type": "integer"
+          },
+          "seasons": {
+            "title": "Seasons",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "player",
+          "seasons",
+          "first_season",
+          "last_season",
+          "games",
+          "points",
+          "rebounds",
+          "assists",
+          "pts_pg",
+          "on_roster"
+        ],
+        "title": "FranchiseLeader",
+        "type": "object"
+      },
+      "FranchiseLeaders": {
+        "properties": {
+          "by": {
+            "enum": [
+              "points",
+              "rebounds",
+              "assists",
+              "games"
+            ],
+            "title": "By",
+            "type": "string"
+          },
+          "leaders": {
+            "items": {
+              "$ref": "#/components/schemas/FranchiseLeader"
+            },
+            "title": "Leaders",
+            "type": "array"
+          },
+          "since": {
+            "description": "Totals count from this season (the first in the data)",
+            "title": "Since",
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamRef"
+          }
+        },
+        "required": [
+          "team",
+          "by",
+          "since",
+          "leaders"
+        ],
+        "title": "FranchiseLeaders",
+        "type": "object"
+      },
+      "FranchiseMvp": {
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/PlayerRef"
+          },
+          "season": {
+            "title": "Season",
+            "type": "string"
+          }
+        },
+        "required": [
+          "season",
+          "player"
+        ],
+        "title": "FranchiseMvp",
+        "type": "object"
+      },
       "GameDetail": {
         "properties": {
           "away": {
@@ -2371,12 +2484,25 @@
             "title": "Conference",
             "type": "string"
           },
+          "first_season": {
+            "description": "First season in the data",
+            "title": "First Season",
+            "type": "string"
+          },
           "latest": {
             "$ref": "#/components/schemas/TeamRecord"
           },
           "logo_url": {
             "title": "Logo Url",
             "type": "string"
+          },
+          "mvps": {
+            "description": "MVP awards won by the franchise's players, oldest first",
+            "items": {
+              "$ref": "#/components/schemas/FranchiseMvp"
+            },
+            "title": "Mvps",
+            "type": "array"
           },
           "name": {
             "examples": [
@@ -2397,6 +2523,7 @@
             "type": "string"
           },
           "seasons": {
+            "description": "Oldest first",
             "items": {
               "$ref": "#/components/schemas/TeamSeason"
             },
@@ -2406,6 +2533,11 @@
           "secondary_color": {
             "title": "Secondary Color",
             "type": "string"
+          },
+          "titles": {
+            "description": "Championships since the first season in the data",
+            "title": "Titles",
+            "type": "integer"
           },
           "total_losses": {
             "title": "Total Losses",
@@ -2426,10 +2558,13 @@
           "nickname",
           "conference",
           "latest",
+          "titles",
+          "first_season",
           "championships",
           "total_wins",
           "total_losses",
-          "seasons"
+          "seasons",
+          "mvps"
         ],
         "title": "TeamDetail",
         "type": "object"
@@ -2513,6 +2648,11 @@
             "title": "Losses",
             "type": "integer"
           },
+          "point_diff_pg": {
+            "description": "Points scored minus points allowed, per game",
+            "title": "Point Diff Pg",
+            "type": "number"
+          },
           "season": {
             "title": "Season",
             "type": "string"
@@ -2532,6 +2672,7 @@
           "losses",
           "win_pct",
           "conference_rank",
+          "point_diff_pg",
           "in_progress"
         ],
         "title": "TeamRecord",
@@ -2607,6 +2748,7 @@
             "type": "integer"
           },
           "point_diff_pg": {
+            "description": "Points scored minus points allowed, per game",
             "title": "Point Diff Pg",
             "type": "number"
           },
@@ -2615,6 +2757,7 @@
             "type": "string"
           },
           "team_abbr_then": {
+            "description": "The abbreviation the franchise used that season, e.g. 'SEA'",
             "title": "Team Abbr Then",
             "type": "string"
           },
@@ -2633,10 +2776,10 @@
           "losses",
           "win_pct",
           "conference_rank",
+          "point_diff_pg",
           "in_progress",
           "team_abbr_then",
           "conference",
-          "point_diff_pg",
           "is_champion"
         ],
         "title": "TeamSeason",
@@ -2720,6 +2863,11 @@
           "secondary_color": {
             "title": "Secondary Color",
             "type": "string"
+          },
+          "titles": {
+            "description": "Championships since the first season in the data",
+            "title": "Titles",
+            "type": "integer"
           }
         },
         "required": [
@@ -2731,7 +2879,8 @@
           "city",
           "nickname",
           "conference",
-          "latest"
+          "latest",
+          "titles"
         ],
         "title": "TeamSummary",
         "type": "object"
@@ -3103,6 +3252,28 @@
     "/api/v1/games/upcoming": {
       "get": {
         "operationId": "upcoming_games_api_v1_games_upcoming_get",
+        "parameters": [
+          {
+            "description": "Only this team's games",
+            "in": "query",
+            "name": "team",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 3,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this team's games",
+              "title": "Team"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3113,6 +3284,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Predictions for the coming week",
@@ -3893,6 +4074,93 @@
           }
         },
         "summary": "Game-by-game record (2020-21 onward)",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{abbr}/leaders": {
+      "get": {
+        "operationId": "get_leaders_api_v1_teams__abbr__leaders_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "abbr",
+            "required": true,
+            "schema": {
+              "examples": [
+                "BOS"
+              ],
+              "maxLength": 3,
+              "minLength": 2,
+              "title": "Abbr",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Rank by total points, rebounds, assists, games",
+            "in": "query",
+            "name": "by",
+            "required": false,
+            "schema": {
+              "default": "points",
+              "description": "Rank by total points, rebounds, assists, games",
+              "enum": [
+                "points",
+                "rebounds",
+                "assists",
+                "games"
+              ],
+              "title": "By",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FranchiseLeaders"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "The franchise's career leaders since the first season in the data",
         "tags": [
           "teams"
         ]
