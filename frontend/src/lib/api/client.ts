@@ -33,6 +33,14 @@ export type PlayerComparison = Schemas["PlayerComparison"];
 export type ComparedPlayer = Schemas["ComparedPlayer"];
 export type MetricInfo = Schemas["MetricInfo"];
 export type MetricKey = MetricInfo["key"];
+export type GameSummary = Schemas["GameSummary"];
+export type GameDetail = Schemas["GameDetail"];
+export type GamePlayer = Schemas["GamePlayer"];
+export type UpcomingGames = Schemas["UpcomingGames"];
+export type GameResults = Schemas["GameResults"];
+export type TrackRecord = Schemas["TrackRecord"];
+export type GameModelDetails = Schemas["GameModelDetails"];
+export type BreakdownItem = Schemas["BreakdownItem"];
 
 /** Query parameters for the player search. Absent keys mean "no filter". */
 export type PlayerQuery = {
@@ -134,6 +142,34 @@ async function fetchComparison(ids: number[], season: string, peerGroup: "ALL" |
   );
 }
 
+async function fetchUpcomingGames() {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/games/upcoming"));
+}
+
+async function fetchGameResults(limit: number, offset: number, team?: string) {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/games/results", { params: { query: { limit, offset, team } } }));
+}
+
+async function fetchGame(id: string, out: number[], into: number[]) {
+  "use cache";
+  cacheLife("hours");
+  return call(() =>
+    api.GET("/api/v1/games/{game_id}", {
+      params: { path: { game_id: id }, query: { out: out.length ? out : undefined, in: into.length ? into : undefined } },
+    }),
+  );
+}
+
+async function fetchGameModel() {
+  "use cache";
+  cacheLife("hours");
+  return call(() => api.GET("/api/v1/games/model"));
+}
+
 // --- public getters ---------------------------------------------------------------------------------
 
 export async function getMeta(): Promise<Meta> {
@@ -182,4 +218,25 @@ export async function getComparison(
 ): Promise<PlayerComparison | null> {
   await connection();
   return fetchComparison(ids, season, peerGroup);
+}
+
+export async function getUpcomingGames(): Promise<UpcomingGames> {
+  await connection();
+  return required(await fetchUpcomingGames(), "Upcoming games");
+}
+
+export async function getGameResults(limit: number, offset = 0, team?: string): Promise<GameResults> {
+  await connection();
+  return required(await fetchGameResults(limit, offset, team), "Game results");
+}
+
+/** `null` when there is no such game. Players named in `out`/`into` are forced out of or into it. */
+export async function getGame(id: string, out: number[] = [], into: number[] = []): Promise<GameDetail | null> {
+  await connection();
+  return fetchGame(id, out, into);
+}
+
+export async function getGameModel(): Promise<GameModelDetails> {
+  await connection();
+  return required(await fetchGameModel(), "Game model");
 }

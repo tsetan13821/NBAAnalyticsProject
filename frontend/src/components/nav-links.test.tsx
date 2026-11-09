@@ -19,6 +19,7 @@ describe("activeHref", () => {
   it("keeps sub-pages under their section", () => {
     expect(activeHref("/mvp/method")).toBe("/mvp");
     expect(activeHref("/players/203999")).toBe("/players");
+    expect(activeHref("/games/0022600150")).toBe("/games");
   });
 
   it("does not match on a shared prefix alone", () => {
