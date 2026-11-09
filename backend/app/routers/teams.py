@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, get_args
 
 from fastapi import APIRouter, Path, Query
 
@@ -7,7 +7,7 @@ from app.errors import NotFoundError
 from app.repositories import teams as teams_repo
 from app.routers import NOT_FOUND
 from app.schemas.common import SEASON_PATTERN
-from app.schemas.teams import Roster, TeamDetail, TeamForm, TeamSummary
+from app.schemas.teams import FranchiseLeaders, LeaderStat, Roster, TeamDetail, TeamForm, TeamSummary
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -46,6 +46,24 @@ def get_roster(conn: DbConn, abbr: TeamAbbr, season: SeasonQuery = None):
     if not players:
         raise NotFoundError(f"No {abbr} players found for {season}")
     return {"team": team, "season": season, "players": players}
+
+
+@router.get(
+    "/{abbr}/leaders", response_model=FranchiseLeaders, responses=NOT_FOUND,
+    summary="The franchise's career leaders since the first season in the data",
+)
+def get_leaders(
+    conn: DbConn,
+    abbr: TeamAbbr,
+    by: Annotated[LeaderStat, Query(description=f"Rank by total {', '.join(get_args(LeaderStat))}")] = "points",
+    limit: Annotated[int, Query(ge=1, le=50)] = 10,
+):
+    abbr = abbr.upper()
+    team = _team_ref_or_404(conn, abbr)
+    return {
+        "team": team, "by": by, "since": teams_repo.first_season(conn, abbr),
+        "leaders": teams_repo.get_leaders(conn, abbr, by, limit),
+    }
 
 
 @router.get(
