@@ -7,6 +7,8 @@
 
 An end-to-end data science and machine learning platform focused on NBA player statistics, predictive awards forecasting, player playstyle clustering, and game outcome modeling.
 
+> 🏗️ **v2 in progress**: the dashboard is being rebuilt as a FastAPI + Next.js application. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and roadmap.
+>
 > 📖 **Complete Documentation**: For an in-depth walkthrough of the data collection API endpoints, feature engineering math, era normalization rules, and machine learning architectures, see [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
 
 ---
@@ -84,6 +86,8 @@ python -m src.pipeline --fetch
 # Or run a single step, e.g. evaluate the MVP model via LOOCV
 python -m src.models.mvp_prediction
 ```
+
+The last pipeline step, `python -m src.export_db`, builds the read-only serving database (`backend/data/nba.db`) used by the v2 API.
 
 ### 4. Launch Streamlit Web Application
 ```bash

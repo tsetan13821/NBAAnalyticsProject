@@ -1,0 +1,17 @@
+{
+  "test_season_id": 22025,
+  "train_games": 5219,
+  "test_games": 1075,
+  "accuracy": 0.6753,
+  "home_baseline": 0.5488,
+  "record_baseline": 0.6809,
+  "min_games_before": 10,
+  "features": [
+    "HOME_Overall_WinPCT",
+    "HOME_Home_WinPCT",
+    "AWAY_Overall_WinPCT",
+    "AWAY_Away_WinPCT",
+    "WinPCT_Diff",
+    "HomeAway_Diff"
+  ]
+}

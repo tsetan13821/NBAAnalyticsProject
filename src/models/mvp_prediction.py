@@ -147,6 +147,8 @@ def test_season(df, z_features, target_season):
         'ACTUAL_MVP': actual_mvp_name,
         'CORRECT': predicted_mvp['PLAYER_NAME'] == actual_mvp_name,
         'TOP_10_CANDIDATES': predictions[['PLAYER_NAME', 'MVP_PROB_SCORE']].head(10).to_dict('records'),
+        'ALL_CANDIDATES': predictions[['PLAYER_ID', 'PLAYER_NAME', 'MVP_PROB_SCORE', 'IS_MVP']].to_dict('records'),
+        'ERA': 1 if target_year <= 2007 else 2,
         'Y_TRUE': test_data['IS_MVP'].values,
         'Y_PRED': (test_data['PLAYER_NAME'] == predicted_mvp['PLAYER_NAME']).astype(int).values
     }

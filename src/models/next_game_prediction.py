@@ -1,4 +1,5 @@
 import argparse
+import json
 import time
 
 import joblib
@@ -9,7 +10,7 @@ from nba_api.stats.endpoints import leaguegamefinder
 from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
 
-from src.paths import CONFIG_PATH, GAME_MATCHUPS, MODELS_DIR, NEXT_GAME_MODEL
+from src.paths import CONFIG_PATH, GAME_MATCHUPS, MODELS_DIR, NEXT_GAME_METRICS, NEXT_GAME_MODEL
 
 BASE_FEATURES = ['HOME_Overall_WinPCT', 'HOME_Home_WinPCT', 'AWAY_Overall_WinPCT', 'AWAY_Away_WinPCT']
 FEATURES = BASE_FEATURES + ['WinPCT_Diff', 'HomeAway_Diff']
@@ -150,7 +151,19 @@ def train_next_game_model(refresh=False):
     joblib.dump(model, NEXT_GAME_MODEL)
     print(f"Model saved to {NEXT_GAME_MODEL}")
 
-    return {'accuracy': accuracy, 'home_baseline': home_baseline, 'record_baseline': record_baseline}
+    metrics = {
+        'test_season_id': int(test_season_id),
+        'train_games': int(len(train)),
+        'test_games': int(len(test)),
+        'accuracy': round(float(accuracy), 4),
+        'home_baseline': round(float(home_baseline), 4),
+        'record_baseline': round(float(record_baseline), 4),
+        'min_games_before': int(min_games),
+        'features': FEATURES,
+    }
+    NEXT_GAME_METRICS.write_text(json.dumps(metrics, indent=2) + "\n")
+    print(f"Metrics saved to {NEXT_GAME_METRICS}")
+    return metrics
 
 
 if __name__ == "__main__":
