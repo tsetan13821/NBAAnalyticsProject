@@ -109,6 +109,9 @@ Open http://localhost:8000/docs for interactive API documentation.
 Or run it in Docker without a local Python setup (the image builds the database itself):
 ```bash
 docker compose up --build
+
+# If port 8000 is already in use, choose another host port
+API_PORT=8001 docker compose up --build
 ```
 
 ### 6. Run Tests

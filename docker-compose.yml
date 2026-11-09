@@ -1,12 +1,13 @@
 # Run the API locally in Docker:  docker compose up --build
 # Then open http://localhost:8000/docs
+# If port 8000 is taken, pick another host port:  API_PORT=8001 docker compose up --build
 services:
   api:
     build:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"
     environment:
       NBA_ALLOWED_ORIGINS: http://localhost:3000
       NBA_CACHE_MAX_AGE: "3600"
