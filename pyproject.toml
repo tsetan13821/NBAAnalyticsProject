@@ -1,0 +1,11 @@
+[project]
+name = "nba-analytics"
+version = "0.1.0"
+description = "NBA player statistics pipelines, award and game prediction models, and a Streamlit dashboard."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "streamlit_app"]

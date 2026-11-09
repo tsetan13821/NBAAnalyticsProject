@@ -65,8 +65,16 @@ def fetch_and_process_game_data(seasons):
     games = games.sort_values(by=['GAME_DATE', 'GAME_ID']).reset_index(drop=True)
     games['HOME_WIN'] = np.where(games['HOME_WL'] == 'W', 1, 0)
 
-    # Running records using only games played BEFORE each game (no look-ahead).
     print("Calculating running win percentages...")
+    return add_running_records(games)
+
+
+def add_running_records(games):
+    """Add each team's season-to-date records using only games played BEFORE each game (no look-ahead).
+
+    Expects one row per game in chronological order with SEASON_ID, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_WIN.
+    """
+    games = games.copy()
     season_records = {}
     computed = {col: [] for col in BASE_FEATURES + ['HOME_GP_BEFORE', 'AWAY_GP_BEFORE']}
 

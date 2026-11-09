@@ -44,8 +44,10 @@ NBAAnalyticsProject/
 │   ├── pages/              # Dashboard pages (Player Stats, Clusters, Model Predictions)
 │   └── utils/data.py       # Shared cached data loaders
 ├── PROJECT_DOCUMENTATION.md # Detailed technical breakdown & architectural guide
-├── pyproject.toml          # Project metadata and dependencies
-├── requirements.txt        # Python dependencies
+├── tests/                  # Pytest suite (helpers, data integrity, models, dashboard smoke tests)
+├── pyproject.toml          # Project metadata and pytest configuration
+├── requirements.txt        # Pinned runtime dependencies
+├── requirements-dev.txt    # Adds test dependencies
 └── README.md               # Project overview
 ```
 
@@ -87,6 +89,13 @@ python -m src.models.mvp_prediction
 ```bash
 streamlit run streamlit_app/app.py
 ```
+
+### 5. Run Tests
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+Tests run on the committed datasets (no NBA API calls) and also run automatically on GitHub Actions for every push and pull request.
 
 ---
 
