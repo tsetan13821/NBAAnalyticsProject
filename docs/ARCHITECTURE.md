@@ -78,12 +78,24 @@ Relocated teams (for example the Seattle SuperSonics) are stored under their cur
 | `availability` | — | Player value (Game Score per minute above replacement, times usual minutes) and how much of it each team fields: at full strength, lately, and expected tonight |
 | `features`, `train` | `saved_models/game_model.json`, `game_model_metrics.json` | Ridge regression on the margin; held-out season, walk-forward, baselines, ablation and calibration |
 | `live` | `data/processed/game_predictions.csv`, `game_players.csv`, `live_meta.json` | The season in progress, from the latest results and injury report, through the same code as training |
+| `refresh` | — | Runs `live` and publishes the data to `main` (the scheduled refreshes) |
 
 Every input is computed walking through the games in date order, so a prediction only ever uses what was known before tip-off; upcoming games go through the same code with no result. The model's injury input is the player value a team expects to field tonight minus what it has fielded in its last ten games, so a long absence (already in the team's results) barely moves the line and a fresh one counts in full. The chance of playing for each report status is measured on rotation players in the training seasons.
 
 **Refreshing.** Results and the injury report change through the day. `python -m src.game_model.live` downloads the latest games, schedule and report and re-predicts the season; `python -m src.export_db` then rebuilds the database. `--no-fetch` reuses what is on disk without touching the network. A download that fails is reported (and listed under `fetch_failed` in `live_meta.json`), and the run carries on with the files on disk.
 
-The GitHub Actions workflow `.github/workflows/refresh-games.yml` runs the same refresh five times a day: the morning after the games, midday, around the 5 PM report, before the early tip-offs and before the late ones. It commits the changed data files as `github-actions[bot]` (with `[skip ci]`), and a host that deploys on push picks them up. The injury report PDFs are kept between runs with `actions/cache`. GitHub can start scheduled runs late and only runs them from the default branch, so the site is fresh to within a few hours, not minutes. A worker beside the API, writing to a separate live database, would close that gap; it depends on where the site is hosted.
+The refresh runs on two machines, because stats.nba.com (results and the schedule) refuses cloud servers while the injury reports, served from elsewhere, don't:
+
+- **GitHub Actions** (`.github/workflows/refresh-games.yml`), five times a day from the morning to before the late tip-offs (US Eastern): the injury report only (`--injuries-only`). The PDFs are kept between runs with `actions/cache`.
+- **A scheduled task on a home PC** (`scripts/install-refresh-task.ps1`), three times a day after the games: everything, results included. It works in its own clone of the repository, so it never commits on the branch being worked on, and a run missed while the PC was off starts when it is back on. Its log is `data/cache/refresh.log` in that clone.
+
+Both run `python -m src.game_model.refresh --push`, which:
+
+- refreshes the data and checks the serving database still builds;
+- commits only if results or statuses changed, with `[skip ci]`; the timestamp alone isn't enough, and gzip files are written with a fixed header time so unchanged data gives the same bytes;
+- pushes to `main`, where a host that deploys on push picks it up.
+
+When both machines push at about the same time, the later push is rejected. That run then starts again from the other's commit instead of merging generated files line by line. GitHub can start scheduled runs late, so the site is fresh to within a few hours, not minutes. A worker beside the API, writing to a separate live database, would close that gap; it depends on where the site is hosted.
 
 Injury statuses are decided per team. Reports come every 15 minutes in 2026-27. Where the latest report lists the team for that game, its statuses are used. Otherwise the Out and Doubtful players from the team's most recent listing are carried forward. This covers games beyond the latest report, and teams whose entry still reads NOT YET SUBMITTED. A team with nobody injured isn't in the report at all, so nothing is carried if it has played since its last listing.
 

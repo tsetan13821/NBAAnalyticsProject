@@ -35,7 +35,7 @@ from src.game_model.features import FEATURE_GROUPS, FEATURES, build_features
 from src.game_model.games import ELO_PER_POINT, elo_home_edge
 from src.game_model.predict import win_probability
 from src.game_model.seasons import configured_seasons
-from src.paths import GAME_FEATURES, GAME_MODEL, GAME_MODEL_METRICS, MODELS_DIR
+from src.paths import GAME_FEATURES, GAME_MODEL, GAME_MODEL_METRICS, GZIP, MODELS_DIR
 
 RIDGE_ALPHA = 1.0
 WALK_FORWARD_SEASONS = 4
@@ -146,7 +146,7 @@ def train_game_model(rebuild_features: bool = True) -> dict:
     seasons = configured_seasons()
     if rebuild_features or not GAME_FEATURES.exists():
         df, play_rates = build_features()
-        df.to_csv(GAME_FEATURES, index=False, compression='gzip')
+        df.to_csv(GAME_FEATURES, index=False, compression=GZIP)
     else:
         df = pd.read_csv(GAME_FEATURES, dtype={'GAME_ID': str})
         play_rates = json.loads(GAME_MODEL.read_text())['play_rates']
