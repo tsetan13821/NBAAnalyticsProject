@@ -1,9 +1,9 @@
 import pandas as pd
-import numpy as np
 from xgboost import XGBClassifier
-from sklearn.metrics import accuracy_score, classification_report
-import warnings
-warnings.filterwarnings('ignore')
+from sklearn.metrics import classification_report
+
+from src.nba_reference import MVP_WINNERS, previous_season
+from src.paths import MVP_DATA
 
 def apply_mvp_candidate_filters(df):
     """
@@ -39,7 +39,7 @@ def apply_mvp_candidate_filters(df):
     df = df[(df['PTS'] + (df['AST'] * 2)) >= 1200]
     
     print(f"Filtered candidate size: {len(df)}")
-    return df
+    return df.copy()
 
 def feature_engineering(df):
     """
@@ -60,29 +60,8 @@ def feature_engineering(df):
     df['IS_TOP_2_SEED'] = (df['SEED_RANK'] <= 2).astype(int)
     
     # 4. Voter Fatigue (Did they win last year?)
-    mw_dict = {
-        '1999-00': 'Shaquille O\'Neal', '2000-01': 'Allen Iverson', '2001-02': 'Tim Duncan',
-        '2002-03': 'Tim Duncan', '2003-04': 'Kevin Garnett', '2004-05': 'Steve Nash',
-        '2005-06': 'Steve Nash', '2006-07': 'Dirk Nowitzki', '2007-08': 'Kobe Bryant',
-        '2008-09': 'LeBron James', '2009-10': 'LeBron James', '2010-11': 'Derrick Rose',
-        '2011-12': 'LeBron James', '2012-13': 'LeBron James', '2013-14': 'Kevin Durant',
-        '2014-15': 'Stephen Curry', '2015-16': 'Stephen Curry', '2016-17': 'Russell Westbrook',
-        '2017-18': 'James Harden', '2018-19': 'Giannis Antetokounmpo', '2019-20': 'Giannis Antetokounmpo',
-        '2020-21': 'Nikola Jokić', '2021-22': 'Nikola Jokić', '2022-23': 'Joel Embiid',
-        '2023-24': 'Nikola Jokić', '2024-25': 'Shai Gilgeous-Alexander'
-    }
-    
-    def check_fatigue(row):
-        try:
-            y1, y2 = row['SEASON'].split('-')
-            prev_season = f"{int(y1)-1}-{int(y2)-1:02d}"
-            if mw_dict.get(prev_season) == row['PLAYER_NAME']:
-                return 1
-        except:
-            pass
-        return 0
-        
-    df['WON_LAST_YEAR'] = df.apply(check_fatigue, axis=1)
+    previous_mvp = df['SEASON'].map(lambda season: MVP_WINNERS.get(previous_season(season)))
+    df['WON_LAST_YEAR'] = (df['PLAYER_NAME'] == previous_mvp).astype(int)
 
     # 5. On/Off Proxy:
     df['ON_OFF_PROXY'] = df['NET_RATING'] - df['DiffPointsPG']
@@ -175,7 +154,7 @@ def test_season(df, z_features, target_season):
 def run_loocv():
     """Runs Leave-One-Season-Out Cross Validation"""
     # Load data
-    df = pd.read_csv('data/processed/mvp_data.csv')
+    df = pd.read_csv(MVP_DATA)
     
     # Apply our domain-knowledge heuristic rules
     df = apply_mvp_candidate_filters(df)
@@ -225,7 +204,7 @@ def run_loocv_cli():
 
 def analyze_specific_season(target_season='2023-24'):
     """Analyze a single target season and print detailed probabilities."""
-    df = pd.read_csv('data/processed/mvp_data.csv')
+    df = pd.read_csv(MVP_DATA)
     df = apply_mvp_candidate_filters(df)
     df, z_features = feature_engineering(df)
     df[z_features] = df[z_features].fillna(0)

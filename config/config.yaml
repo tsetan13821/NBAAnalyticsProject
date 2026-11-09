@@ -4,6 +4,11 @@ data_collection:
   season_type: "Regular Season"
   min_games_played: 20 # Filter out players with very few games to reduce noise
 
+next_game:
+  # Regular seasons used for the game outcome model. The last season is held out as the test set.
+  seasons: ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
+  min_games_before: 10 # Skip games where either team has played fewer games than this (records too noisy)
+
 features:
   base:
     - GP       # Games Played

@@ -1,11 +1,12 @@
-import os
 import time
 import yaml
 import pandas as pd
 from tqdm import tqdm
 from nba_api.stats.endpoints import leaguedashplayerstats
 
-def load_config(config_path="config/config.yaml"):
+from src.paths import CONFIG_PATH, RAW_DIR, RAW_PLAYER_STATS
+
+def load_config(config_path=CONFIG_PATH):
     with open(config_path, "r") as file:
         return yaml.safe_load(file)
 
@@ -111,12 +112,9 @@ def main():
     final_df = final_df.sort_values(by=['SEASON', 'PLAYER_NAME']).reset_index(drop=True)
     
     # Save the data
-    output_dir = "data/raw"
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "nba_player_stats.csv")
-    
-    final_df.to_csv(output_path, index=False)
-    print(f"Data successfully saved to {output_path}")
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    final_df.to_csv(RAW_PLAYER_STATS, index=False)
+    print(f"Data successfully saved to {RAW_PLAYER_STATS}")
 
 if __name__ == "__main__":
     main()
