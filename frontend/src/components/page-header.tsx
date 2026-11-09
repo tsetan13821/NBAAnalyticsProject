@@ -1,22 +1,22 @@
 export function PageHeader({
   eyebrow,
   title,
-  description,
+  lede,
   actions,
 }: {
-  eyebrow?: string;
-  title: string;
-  description?: React.ReactNode;
+  eyebrow?: React.ReactNode;
+  title: React.ReactNode;
+  lede?: React.ReactNode;
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="max-w-2xl">
-        {eyebrow && <p className="mb-1 text-sm font-medium text-brand">{eyebrow}</p>}
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-        {description && <p className="mt-2 text-muted-foreground">{description}</p>}
+    <header className="mb-12 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
+      <div className="max-w-3xl">
+        {eyebrow && <p className="eyebrow mb-3 text-brand">{eyebrow}</p>}
+        <h1 className="font-display text-5xl leading-[0.92] font-bold tracking-tight uppercase sm:text-7xl">{title}</h1>
+        {lede && <p className="mt-5 max-w-2xl font-serif text-lg leading-relaxed text-muted-foreground">{lede}</p>}
       </div>
       {actions}
-    </div>
+    </header>
   );
 }

@@ -9,7 +9,7 @@ import { currentTheme, type Theme, useTheme } from "@/lib/theme";
 
 const BAR_HEIGHT = 34;
 
-type Palette = { brand: string; muted: string; text: string; subtle: string; grid: string; popover: string };
+type Palette = { brand: string; muted: string; text: string; subtle: string; grid: string; popover: string; font?: string };
 
 const palettes: Partial<Record<Theme, Palette>> = {};
 
@@ -22,12 +22,15 @@ function readPalette(theme: Theme): Palette {
     subtle: cssColor("--muted-foreground"),
     grid: cssColor("--border"),
     popover: cssColor("--popover"),
+    // next/font exposes the generated family list (with its metric-matched fallback) as a variable.
+    font: getComputedStyle(document.documentElement).getPropertyValue("--font-barlow").trim() || undefined,
   });
 }
 
 export function buildRaceOption(candidates: MvpCandidate[], palette: Palette): EChartOption {
   return {
     animationDuration: 600,
+    textStyle: { fontFamily: palette.font },
     grid: { left: 8, right: 56, top: 8, bottom: 24, containLabel: true },
     tooltip: {
       trigger: "item",

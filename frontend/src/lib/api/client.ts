@@ -16,6 +16,7 @@ export type Meta = Schemas["Meta"];
 export type SeasonInfo = Schemas["SeasonInfo"];
 export type MvpOverview = Schemas["MvpOverview"];
 export type MvpSeasonResult = Schemas["MvpSeasonResult"];
+export type EraAccuracy = Schemas["EraAccuracy"];
 export type MvpRace = Schemas["MvpRace"];
 export type MvpCandidate = Schemas["MvpCandidate"];
 export type PlayerRef = Schemas["PlayerRef"];

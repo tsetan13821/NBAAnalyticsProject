@@ -1,10 +1,14 @@
+import { ArrowRightIcon } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
-import { SeasonResultCard, SeasonResultCardSkeleton } from "@/components/mvp/season-result-card";
+import { Figure, FigureRow, Section, SectionHeading } from "@/components/editorial";
+import { SeasonLedger } from "@/components/mvp/season-ledger";
+import { SeasonStrip } from "@/components/mvp/season-strip";
 import { PageHeader } from "@/components/page-header";
-import { StatTile, StatTileSkeleton } from "@/components/stat-tile";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CANDIDATE_FUNNEL } from "@/content/mvp-method";
 import { getMvpOverview } from "@/lib/api/client";
 import { percent, ratio } from "@/lib/format";
 
@@ -13,118 +17,104 @@ export const metadata: Metadata = {
   description: "How well a machine-learning model picks the NBA MVP, season by season since 2000-01.",
 };
 
+const IN_BRIEF = [
+  {
+    title: "Narrow the field",
+    body: `Six basketball rules (team record, games played, usage, impact, offensive output) cut ${CANDIDATE_FUNNEL[0].count.toLocaleString("en-US")} player-seasons to ${CANDIDATE_FUNNEL[CANDIDATE_FUNNEL.length - 1].count} candidates. Every real MVP survives.`,
+  },
+  {
+    title: "Compare within the season",
+    body: "Each stat becomes a z-score against that season's other candidates, so different scoring eras compare fairly.",
+  },
+  {
+    title: "Two eras, two models",
+    body: "2000-01 to 2007-08 is judged on volume and record; 2008-09 onward on efficiency and impact. Each is an XGBoost classifier.",
+  },
+  {
+    title: "Never see the answer",
+    body: "Each season is predicted by a model trained on the other seasons of its era, never on the season itself.",
+  },
+];
+
 export default function MvpPage() {
   return (
     <>
       <PageHeader
-        eyebrow="MVP model"
-        title="Can a model pick the MVP?"
-        description="An XGBoost classifier ranks each season's MVP candidates. Every season is predicted by a model trained only on the other seasons, so it never sees the answer."
+        eyebrow="MVP model · 2000-01 to 2025-26"
+        title="Can a model call the MVP?"
+        lede="A model ranks each season's contenders from their regular-season numbers. Every season is predicted by a version of the model that never saw who won."
       />
+
       <Suspense fallback={<OverviewSkeleton />}>
         <Overview />
       </Suspense>
-      <HowItWorks />
+
+      <Section>
+        <SectionHeading
+          number="02"
+          title="The method in brief"
+          aside={
+            <Link href="/mvp/method" className="eyebrow inline-flex items-center gap-1.5 text-brand hover:underline">
+              Full methodology <ArrowRightIcon className="size-3.5" />
+            </Link>
+          }
+        />
+        <ol className="grid gap-px border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          {IN_BRIEF.map((step, index) => (
+            <li key={step.title} className="bg-background p-5">
+              <span className="tabular font-display text-4xl leading-none font-bold text-brand">{index + 1}</span>
+              <h3 className="mt-3 font-display text-xl leading-tight font-bold uppercase">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      <Suspense fallback={<Skeleton className="mt-16 h-96 w-full" />}>
+        <Ledger />
+      </Suspense>
     </>
   );
 }
 
 async function Overview() {
   const overview = await getMvpOverview();
-  const eras = overview.eras.toSorted((a, b) => b.era - a.era); // newest era first
-  const [modern, early] = eras;
-  const newestFirst = overview.seasons.toReversed();
-
+  const [modern, early] = overview.eras.toSorted((a, b) => b.era - a.era);
   return (
-    <>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile
-          label="Correct picks"
+    <Section>
+      <SectionHeading number="01" title="Season by season" aside="Select a season to see the full race" />
+      <SeasonStrip results={overview.seasons} />
+      <FigureRow className="mt-8">
+        <Figure
+          label="Picked the MVP"
           value={ratio(overview.correct, overview.total)}
           detail={`${percent(overview.correct / overview.total)} of seasons`}
-          emphasis
+          tone="brand"
         />
-        <StatTile
-          label="MVP in model's top 3"
-          value={ratio(overview.top3, overview.total)}
-          detail={percent(overview.top3 / overview.total)}
-        />
-        <StatTile label={modern.label} value={ratio(modern.correct, modern.seasons)} detail="Efficiency and impact features" />
-        <StatTile label={early.label} value={ratio(early.correct, early.seasons)} detail="Box-score features" />
-      </div>
+        <Figure label="MVP in its top 3" value={ratio(overview.top3, overview.total)} detail={percent(overview.top3 / overview.total)} />
+        <Figure label={modern.label} value={ratio(modern.correct, modern.seasons)} detail="Efficiency and impact model" />
+        <Figure label={early.label} value={ratio(early.correct, early.seasons)} detail="Volume and record model" />
+      </FigureRow>
+    </Section>
+  );
+}
 
-      {eras.map((era) => (
-        <section key={era.era} className="mt-10">
-          <h2 className="mb-4 flex items-baseline gap-3 text-lg font-semibold tracking-tight">
-            {era.label}
-            <span className="tabular text-sm font-normal text-muted-foreground">
-              {ratio(era.correct, era.seasons)} correct
-            </span>
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {newestFirst
-              .filter((result) => result.era === era.era)
-              .map((result) => (
-                <SeasonResultCard key={result.season} result={result} />
-              ))}
-          </div>
-        </section>
-      ))}
-    </>
+async function Ledger() {
+  const overview = await getMvpOverview();
+  return (
+    <Section>
+      <SectionHeading number="03" title="The ledger" aside="Newest first" />
+      <SeasonLedger results={overview.seasons} eras={overview.eras} />
+    </Section>
   );
 }
 
 function OverviewSkeleton() {
   return (
-    <>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <StatTileSkeleton key={i} />
-        ))}
-      </div>
-      <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }, (_, i) => (
-          <SeasonResultCardSkeleton key={i} />
-        ))}
-      </div>
-    </>
-  );
-}
-
-const STEPS = [
-  {
-    title: "Candidates",
-    body: "Players with at least 50 games on teams that won at least 55% of their games. Players on 55–65% teams also need elite usage and impact. Low-usage role players are filtered out.",
-  },
-  {
-    title: "Two eras, two feature sets",
-    body: "2000-01 to 2007-08 uses box-score stats (points, rebounds, assists, steals + blocks) and team seed. From 2008-09 the model uses efficiency and impact: true shooting, offensive load, PIE, an on/off proxy, defensive rating and games played. Every stat is compared within its own season.",
-  },
-  {
-    title: "Tested on unseen seasons",
-    body: "Leave-one-season-out validation: to predict a season, the model is retrained on every other season of its era. The candidate with the highest score is the pick.",
-  },
-];
-
-function HowItWorks() {
-  return (
-    <section className="mt-12">
-      <h2 className="mb-4 text-lg font-semibold tracking-tight">How it works</h2>
-      <div className="grid gap-4 md:grid-cols-3">
-        {STEPS.map((step, index) => (
-          <Card key={step.title} size="sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="tabular flex size-6 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">
-                  {index + 1}
-                </span>
-                {step.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-muted-foreground">{step.body}</CardContent>
-          </Card>
-        ))}
-      </div>
-    </section>
+    <Section>
+      <Skeleton className="mb-6 h-10 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="mt-8 h-28 w-full" />
+    </Section>
   );
 }

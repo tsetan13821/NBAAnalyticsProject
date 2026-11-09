@@ -7,13 +7,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-sans: var(--font-barlow);
+  --font-display: var(--font-barlow-condensed);
+  --font-serif: var(--font-source-serif);
+  --font-heading: var(--font-barlow-condensed);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-hit: var(--hit);
   --color-miss: var(--miss);
+  --color-paper: var(--paper);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -44,76 +46,82 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Light theme */
+/*
+ * Two looks for one almanac:
+ *   light = newsprint (cream paper, ink)      dark = arena (warm black, off-white)
+ * Orange is the ball: the real MVP, active states and section numbers.
+ * Green and red mark the model's hits and misses.
+ */
+
+/* Light: newsprint */
 :root {
-  --background: oklch(0.985 0.002 265);
-  --foreground: oklch(0.17 0.015 265);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0.015 265);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0.015 265);
-  --primary: oklch(0.21 0.02 265);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.955 0.005 265);
-  --secondary-foreground: oklch(0.21 0.02 265);
-  --muted: oklch(0.955 0.005 265);
-  --muted-foreground: oklch(0.5 0.02 265);
-  --accent: oklch(0.955 0.005 265);
-  --accent-foreground: oklch(0.21 0.02 265);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.006 265);
-  --input: oklch(0.91 0.006 265);
-  --ring: oklch(0.65 0.17 47);
-  --radius: 0.625rem;
+  --background: oklch(0.965 0.013 88);
+  --foreground: oklch(0.21 0.012 60);
+  --paper: oklch(0.985 0.008 88);
+  --card: oklch(0.985 0.008 88);
+  --card-foreground: oklch(0.21 0.012 60);
+  --popover: oklch(0.985 0.008 88);
+  --popover-foreground: oklch(0.21 0.012 60);
+  --primary: oklch(0.21 0.012 60);
+  --primary-foreground: oklch(0.97 0.012 88);
+  --secondary: oklch(0.92 0.016 85);
+  --secondary-foreground: oklch(0.21 0.012 60);
+  --muted: oklch(0.92 0.016 85);
+  --muted-foreground: oklch(0.45 0.02 65);
+  --accent: oklch(0.92 0.016 85);
+  --accent-foreground: oklch(0.21 0.012 60);
+  --destructive: oklch(0.55 0.2 28);
+  --border: oklch(0.21 0.012 60 / 15%);
+  --input: oklch(0.21 0.012 60 / 22%);
+  --ring: oklch(0.6 0.19 42);
+  --radius: 0.25rem;
 
-  /* Basketball orange: the accent for highlights, the actual MVP and active navigation */
-  --brand: oklch(0.64 0.19 45);
-  --brand-foreground: oklch(0.99 0 0);
-  /* Correct and incorrect model picks */
-  --hit: oklch(0.56 0.14 155);
-  --miss: oklch(0.58 0.2 25);
+  --brand: oklch(0.6 0.19 42);
+  --brand-foreground: oklch(0.985 0.008 88);
+  --hit: oklch(0.5 0.12 150);
+  --miss: oklch(0.55 0.2 28);
 
-  --chart-1: oklch(0.64 0.19 45);
-  --chart-2: oklch(0.55 0.12 250);
-  --chart-3: oklch(0.6 0.13 180);
-  --chart-4: oklch(0.7 0.12 85);
-  --chart-5: oklch(0.55 0.15 310);
-  /* Bars that are not highlighted */
-  --chart-muted: oklch(0.78 0.02 265);
+  --chart-1: oklch(0.6 0.19 42);
+  --chart-2: oklch(0.45 0.08 240);
+  --chart-3: oklch(0.5 0.12 150);
+  --chart-4: oklch(0.65 0.12 80);
+  --chart-5: oklch(0.5 0.12 320);
+  --chart-muted: oklch(0.76 0.025 75);
 }
 
-/* Dark theme (default) */
+/* Dark: arena (default) */
 .dark {
-  --background: oklch(0.155 0.012 265);
-  --foreground: oklch(0.96 0.005 265);
-  --card: oklch(0.195 0.014 265);
-  --card-foreground: oklch(0.96 0.005 265);
-  --popover: oklch(0.21 0.014 265);
-  --popover-foreground: oklch(0.96 0.005 265);
-  --primary: oklch(0.94 0.005 265);
-  --primary-foreground: oklch(0.2 0.015 265);
-  --secondary: oklch(0.255 0.016 265);
-  --secondary-foreground: oklch(0.96 0.005 265);
-  --muted: oklch(0.255 0.016 265);
-  --muted-foreground: oklch(0.7 0.02 265);
-  --accent: oklch(0.27 0.018 265);
-  --accent-foreground: oklch(0.96 0.005 265);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.72 0.17 50);
+  --background: oklch(0.165 0.006 70);
+  --foreground: oklch(0.945 0.013 85);
+  --paper: oklch(0.2 0.007 70);
+  --card: oklch(0.2 0.007 70);
+  --card-foreground: oklch(0.945 0.013 85);
+  --popover: oklch(0.22 0.008 70);
+  --popover-foreground: oklch(0.945 0.013 85);
+  --primary: oklch(0.945 0.013 85);
+  --primary-foreground: oklch(0.18 0.006 70);
+  --secondary: oklch(0.25 0.008 70);
+  --secondary-foreground: oklch(0.945 0.013 85);
+  --muted: oklch(0.25 0.008 70);
+  --muted-foreground: oklch(0.7 0.016 80);
+  --accent: oklch(0.26 0.009 70);
+  --accent-foreground: oklch(0.945 0.013 85);
+  --destructive: oklch(0.66 0.19 28);
+  --border: oklch(0.945 0.013 85 / 13%);
+  --input: oklch(0.945 0.013 85 / 18%);
+  --ring: oklch(0.7 0.18 48);
 
-  --brand: oklch(0.72 0.17 50);
-  --brand-foreground: oklch(0.17 0.015 265);
-  --hit: oklch(0.72 0.15 155);
-  --miss: oklch(0.7 0.17 25);
+  --brand: oklch(0.7 0.18 48);
+  --brand-foreground: oklch(0.17 0.006 70);
+  --hit: oklch(0.72 0.14 150);
+  --miss: oklch(0.67 0.19 28);
 
-  --chart-1: oklch(0.72 0.17 50);
-  --chart-2: oklch(0.68 0.12 250);
-  --chart-3: oklch(0.72 0.12 180);
+  --chart-1: oklch(0.7 0.18 48);
+  --chart-2: oklch(0.7 0.09 240);
+  --chart-3: oklch(0.72 0.14 150);
   --chart-4: oklch(0.8 0.12 85);
-  --chart-5: oklch(0.68 0.14 310);
-  --chart-muted: oklch(0.42 0.025 265);
+  --chart-5: oklch(0.7 0.12 320);
+  --chart-muted: oklch(0.4 0.012 70);
 }
 
 @layer base {
@@ -129,8 +137,48 @@
   html {
     @apply font-sans;
   }
+  ::selection {
+    background: color-mix(in oklch, var(--brand) 35%, transparent);
+  }
+}
+
+@layer components {
   /* Stats line up in columns */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Small condensed capitals: section numbers, labels, table headers */
+  .eyebrow {
+    font-family: var(--font-barlow-condensed);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Long-form writing (methodology) */
+  .article {
+    font-family: var(--font-source-serif);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    max-width: 68ch;
+  }
+  .article p + p {
+    margin-top: 1em;
+  }
+  .article strong {
+    font-weight: 600;
+  }
+  .article code,
+  .formula {
+    font-family: var(--font-barlow-condensed);
+    font-size: 0.95em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.05em 0.35em;
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    white-space: nowrap;
   }
 }

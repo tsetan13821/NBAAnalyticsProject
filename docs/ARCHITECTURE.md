@@ -122,9 +122,10 @@ The web app lives in `frontend/`: Next.js 16 (App Router, React Server Component
 
 | Route | Page |
 | :--- | :--- |
-| `/` | Overview: headline model results and links to each section |
-| `/mvp` | MVP model accuracy overall and by era, and a card for every season (pick vs actual winner) |
-| `/mvp/{season}` | One season's race: model pick vs actual MVP, a chart of each candidate's share of the model score, full candidate table, season picker |
+| `/` | Overview: the MVP model's season-by-season record, the game model against its baselines, and a contents list |
+| `/mvp` | MVP model accuracy overall and by era, a strip of every season (hit or miss), the method in brief, and a ledger of every pick against the real winner |
+| `/mvp/method` | How the MVP model works: the candidate rules (with a funnel of how many player-seasons each removes), the features, the two eras, model settings, validation, results and limitations, with the reasoning behind each decision |
+| `/mvp/{season}` | One season's race: model pick vs actual MVP side by side, a chart of each candidate's share of the model score, full candidate table, season picker |
 
 ### Code layout
 
@@ -134,7 +135,10 @@ frontend/src/
 ├── components/
 │   ├── ui/              # shadcn/ui primitives (card, table, select, ...)
 │   ├── charts/          # ECharts wrapper and chart components (client-side)
-│   └── mvp/             # MVP page components
+│   ├── mvp/             # MVP page components (season strip, ledger, funnel, validation diagram, ...)
+│   └── editorial.tsx    # Shared layout pieces: numbered sections, big figures, decision notes
+├── content/
+│   └── mvp-method.ts    # Facts about the MVP model shown on /mvp/method (rules, funnel counts, features, settings)
 └── lib/
     ├── api/client.ts    # Typed, cached API access (server-side only)
     ├── api/schema.ts    # Generated from backend/openapi.json (npm run gen:api)
@@ -153,9 +157,11 @@ frontend/src/
 
 ### Design
 
-- **Theme.** Dark is the default, and the light theme is a toggle. Both are CSS variables in `globals.css`. Orange (`--brand`) marks the real MVP and active elements; green and red (`--hit`, `--miss`) mark correct and incorrect picks. A small inline script applies the saved theme before the first paint, so there is no flash on load.
-- **Charts** are ECharts with only the bar chart, grid and tooltip modules registered, and they render as SVG. Colours are read from the same CSS variables. They are converted to RGB first, because ECharts can't parse `oklch()`.
+- **Look.** The site is laid out like a sports almanac rather than a dashboard: numbered sections under heavy rules, large condensed headlines and scoreboard figures, hairline tables, and serif body text for the long-form explanations. Fonts are Barlow (interface), Barlow Condensed (headlines and figures) and Source Serif 4 (prose), self-hosted through `next/font`. Corners are nearly square and there are no card shadows.
+- **Theme.** Dark ("arena", warm near-black) is the default, and the light theme ("newsprint", warm off-white) is a toggle. Both are CSS variables in `globals.css`. Orange (`--brand`) marks the real MVP and active elements; green and red (`--hit`, `--miss`) mark correct and incorrect picks. A small inline script applies the saved theme before the first paint, so there is no flash on load.
+- **Charts** are ECharts with only the bar chart, grid and tooltip modules registered, and they render as SVG. Colours and the font are read from the same CSS variables. They are converted to RGB first, because ECharts can't parse `oklch()`.
 - **Headshots** come from the NBA CDN through the Next.js image optimizer. Players without a photo fall back to their initials.
+- **Small diagrams** (the season strip, the candidate funnel, the validation diagram) are plain HTML and CSS rather than chart components, so they render on the server with no JavaScript.
 - **Teams** are shown as an abbreviation badge in the team's colour (text colour chosen for contrast) rather than hotlinked logos.
 
 ## Testing and CI

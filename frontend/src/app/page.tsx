@@ -2,94 +2,137 @@ import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { Figure, FigureRow, Section, SectionHeading } from "@/components/editorial";
+import { SeasonStrip } from "@/components/mvp/season-strip";
 import { PageHeader } from "@/components/page-header";
-import { StatTile, StatTileSkeleton } from "@/components/stat-tile";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getMeta } from "@/lib/api/client";
-import { percent, ratio, seasonCount } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getMeta, getMvpOverview } from "@/lib/api/client";
+import { percent, ratio } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-const COMING_SOON = [
-  { title: "Players", description: "Search 2,000 players, career profiles and side-by-side percentile comparisons." },
+const CONTENTS: { title: string; description: string; href?: string }[] = [
+  {
+    title: "MVP Race",
+    description: "The model's pick against the real winner for every season, and the full field of contenders.",
+    href: "/mvp",
+  },
+  {
+    title: "How the MVP model works",
+    description: "The rules, features, settings and validation, with every design decision and its trade-off.",
+    href: "/mvp/method",
+  },
+  { title: "Players", description: "Search 2,000 players, career profiles and percentile comparisons." },
   { title: "Game predictor", description: "Win probability for any matchup from each team's record." },
-  { title: "Franchises", description: "26 seasons of records, rosters and championships for all 30 teams." },
+  { title: "Franchises", description: "Records, rosters and championships for all 30 teams." },
 ];
 
 export default function HomePage() {
   return (
     <>
       <PageHeader
-        eyebrow="2000-01 to 2025-26"
-        title="Machine learning on 26 NBA seasons"
-        description="Player and team data from NBA.com, an MVP model tested on every season it never saw, and a game win-probability model."
+        eyebrow="NBA.com data · 2000-01 to 2025-26"
+        title={
+          <>
+            Twenty-six seasons,
+            <br className="hidden sm:block" /> read by a model
+          </>
+        }
+        lede="Player and team statistics from every regular season since 2000, and machine-learning models built on them: who wins MVP, and who wins tonight's game."
       />
 
-      <Suspense fallback={<HeadlineSkeleton />}>
-        <Headline />
-      </Suspense>
+      <Section>
+        <SectionHeading
+          number="01"
+          title="The MVP record"
+          aside={
+            <Link href="/mvp" className="eyebrow inline-flex items-center gap-1.5 text-brand hover:underline">
+              MVP Race <ArrowRightIcon className="size-3.5" />
+            </Link>
+          }
+        />
+        <Suspense fallback={<Skeleton className="h-20 w-full" />}>
+          <MvpRecord />
+        </Suspense>
+      </Section>
 
-      <h2 className="mt-12 mb-4 text-lg font-semibold tracking-tight">Explore</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/mvp" className="group rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
-          <Card className="h-full ring-brand/40 transition-colors group-hover:bg-accent/60 group-hover:ring-brand">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                MVP Race
-                <ArrowRightIcon className="size-4 text-brand transition-transform group-hover:translate-x-0.5" />
-              </CardTitle>
-              <CardDescription>
-                Who the model picked each season, who actually won, and the full candidate field.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </Link>
-        {COMING_SOON.map(({ title, description }) => (
-          <Card key={title} className="h-full opacity-70">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {title}
-                <Badge variant="secondary">Soon</Badge>
-              </CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+      <Section>
+        <SectionHeading number="02" title="The game model" />
+        <Suspense fallback={<Skeleton className="h-28 w-full" />}>
+          <GameModel />
+        </Suspense>
+      </Section>
+
+      <Section>
+        <SectionHeading number="03" title="In this almanac" />
+        <ol className="border-t">
+          {CONTENTS.map((item, index) => {
+            const body = (
+              <>
+                <span className="tabular font-display text-2xl font-bold text-muted-foreground group-hover:text-brand">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span>
+                  <span className="block font-display text-2xl leading-tight font-bold uppercase">{item.title}</span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{item.description}</span>
+                </span>
+                <span className={cn("eyebrow self-center text-right", item.href ? "text-brand" : "text-muted-foreground")}>
+                  {item.href ? "Open →" : "In progress"}
+                </span>
+              </>
+            );
+            const layout = "grid grid-cols-[2.5rem_1fr_auto] gap-4 border-b py-4";
+            return (
+              <li key={item.title}>
+                {item.href ? (
+                  <Link href={item.href} className={cn(layout, "group transition-colors hover:bg-muted/40")}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={cn(layout, "opacity-60")}>{body}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </Section>
     </>
   );
 }
 
-async function Headline() {
-  const meta = await getMeta();
-  const nextGame = meta.next_game_model;
+async function MvpRecord() {
+  const overview = await getMvpOverview();
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <StatTile
-        label="MVP picks correct"
-        value={ratio(meta.mvp_model.correct, meta.mvp_model.seasons)}
-        detail={`${percent(meta.mvp_model.correct / meta.mvp_model.seasons)} of seasons, each predicted by a model that never saw it`}
-        emphasis
-      />
-      <StatTile
-        label="Game predictions correct"
-        value={percent(nextGame.accuracy)}
-        detail={`${nextGame.test_games.toLocaleString("en-US")} games in ${nextGame.test_season}. Always picking the home team: ${percent(nextGame.home_baseline)}; picking the better record: ${percent(nextGame.record_baseline)}`}
-      />
-      <StatTile
-        label="Seasons"
-        value={String(seasonCount(meta.first_season, meta.last_season))}
-        detail={`${meta.first_season} to ${meta.last_season}`}
-      />
-    </div>
+    <>
+      <SeasonStrip results={overview.seasons} />
+      <FigureRow className="mt-8">
+        <Figure
+          label="Seasons called correctly"
+          value={ratio(overview.correct, overview.total)}
+          detail={`${percent(overview.correct / overview.total)}, each predicted by a model that never saw the answer`}
+          tone="brand"
+        />
+        <Figure label="MVP in the model's top 3" value={ratio(overview.top3, overview.total)} />
+      </FigureRow>
+    </>
   );
 }
 
-function HeadlineSkeleton() {
+async function GameModel() {
+  const meta = await getMeta();
+  const model = meta.next_game_model;
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <StatTileSkeleton />
-      <StatTileSkeleton />
-      <StatTileSkeleton />
-    </div>
+    <>
+      <FigureRow>
+        <Figure label="Model" value={percent(model.accuracy)} tone="brand" />
+        <Figure label="Always pick the home team" value={percent(model.home_baseline)} />
+        <Figure label="Pick the better record" value={percent(model.record_baseline)} />
+      </FigureRow>
+      <p className="mt-4 max-w-2xl font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
+        Share of {model.test_games.toLocaleString("en-US")} games in {model.test_season} called correctly, from each
+        team&apos;s record before tip-off. The model clearly beats &ldquo;home team wins&rdquo; but falls just
+        short of simply backing the team with the better record, an honest sign of how much a record alone can tell
+        you.
+      </p>
+    </>
   );
 }

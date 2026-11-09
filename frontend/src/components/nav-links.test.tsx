@@ -1,21 +1,27 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { isActive, NavLinks } from "./nav-links";
+import { activeHref, NavLinks } from "./nav-links";
 
 const pathname = vi.hoisted(() => ({ current: "/" }));
 vi.mock("next/navigation", () => ({ usePathname: () => pathname.current }));
 
-describe("isActive", () => {
+describe("activeHref", () => {
   it("matches the home page exactly", () => {
-    expect(isActive("/", "/")).toBe(true);
-    expect(isActive("/mvp", "/")).toBe(false);
+    expect(activeHref("/")).toBe("/");
   });
 
   it("matches a section and its sub-pages", () => {
-    expect(isActive("/mvp", "/mvp")).toBe(true);
-    expect(isActive("/mvp/2022-23", "/mvp")).toBe(true);
-    expect(isActive("/mvpx", "/mvp")).toBe(false);
+    expect(activeHref("/mvp")).toBe("/mvp");
+    expect(activeHref("/mvp/2022-23")).toBe("/mvp");
+  });
+
+  it("prefers the most specific link", () => {
+    expect(activeHref("/mvp/method")).toBe("/mvp/method");
+  });
+
+  it("does not match on a shared prefix alone", () => {
+    expect(activeHref("/mvpx")).toBeUndefined();
   });
 });
 
@@ -25,5 +31,6 @@ describe("NavLinks", () => {
     render(<NavLinks />);
     expect(screen.getByRole("link", { name: "MVP Race" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Method" })).not.toHaveAttribute("aria-current");
   });
 });
