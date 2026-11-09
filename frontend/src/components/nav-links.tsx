@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/", label: "Overview" },
-  { href: "/mvp", label: "MVP Race" },
+  { href: "/mvp", label: "MVP Race", short: "MVP" },
   { href: "/players", label: "Players" },
+  { href: "/compare", label: "Compare" },
 ] as const;
 
 /** The link whose section contains the path; the most specific wins if sections ever nest. */
@@ -24,17 +25,26 @@ export function NavLinkList({ pathname }: { pathname?: string }) {
   const active = pathname === undefined ? undefined : activeHref(pathname);
   return (
     <nav aria-label="Main" className="-mx-1 flex min-w-0 items-stretch gap-4 overflow-x-auto px-1 [scrollbar-width:none] sm:gap-6">
-      {LINKS.map(({ href, label }) => (
+      {LINKS.map(({ href, label, ...link }) => (
         <Link
           key={href}
           href={href}
+          // The full name, also when a phone shows the short one.
+          aria-label={label}
           aria-current={href === active ? "page" : undefined}
           className={cn(
             "flex items-center border-b-2 border-transparent pt-0.5 font-display text-[0.95rem] font-semibold tracking-[0.08em] whitespace-nowrap text-muted-foreground uppercase transition-colors hover:text-foreground",
             href === active && "border-brand text-foreground",
           )}
         >
-          {label}
+          {"short" in link ? (
+            <>
+              <span className="sm:hidden">{link.short}</span>
+              <span className="max-sm:hidden">{label}</span>
+            </>
+          ) : (
+            label
+          )}
         </Link>
       ))}
     </nav>

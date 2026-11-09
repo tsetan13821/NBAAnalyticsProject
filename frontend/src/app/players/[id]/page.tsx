@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, ColumnsIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,6 +11,7 @@ import { SeasonTable } from "@/components/players/season-table";
 import { SimilarPlayers } from "@/components/players/similar-players";
 import { SeasonPicker } from "@/components/season-picker";
 import { Skeleton } from "@/components/ui/skeleton";
+import { compareHref } from "@/lib/compare";
 import { getMeta, getPlayer, getSimilarPlayers, type PlayerProfile } from "@/lib/api/client";
 import { isSeason, stat } from "@/lib/format";
 import { parsePlayerId } from "@/lib/player-search";
@@ -28,13 +29,15 @@ export async function generateMetadata({ params }: PageProps<"/players/[id]">): 
 export default function PlayerPage({ params, searchParams }: PageProps<"/players/[id]">) {
   return (
     <>
-      <Link
-        href="/players"
-        className="eyebrow mb-6 inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon className="size-3.5" />
-        All players
-      </Link>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <Link href="/players" className="eyebrow inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+          <ArrowLeftIcon className="size-3.5" />
+          All players
+        </Link>
+        <Suspense>
+          <CompareLink params={params} />
+        </Suspense>
+      </div>
       <Suspense fallback={<ProfileSkeleton />}>
         <Profile params={params} searchParams={searchParams} />
       </Suspense>
@@ -133,6 +136,20 @@ async function Similar({
         </p>
       </details>
     </Section>
+  );
+}
+
+async function CompareLink({ params }: Pick<PageProps<"/players/[id]">, "params">) {
+  const id = parsePlayerId((await params).id);
+  if (!id) return null;
+  return (
+    <Link
+      href={compareHref({ ids: [id], peers: "ALL" })}
+      className="eyebrow inline-flex items-center gap-1.5 text-muted-foreground hover:text-brand"
+    >
+      <ColumnsIcon className="size-3.5" />
+      Compare
+    </Link>
   );
 }
 

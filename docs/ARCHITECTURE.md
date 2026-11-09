@@ -132,6 +132,7 @@ The web app lives in `frontend/`: Next.js 16 (App Router, React Server Component
 | `/mvp/{season}` | One season's race: model pick vs actual MVP side by side, a chart of each candidate's share of the model score, full candidate table, season picker |
 | `/players` | Player search: by name (as you type, ignoring accents), position, team and season; 25 per page. The filters live in the URL, so a search can be shared or bookmarked |
 | `/players/{id}` | Player profile: bio, MVP seasons, career averages, a chart of any stat by season, the season-by-season table with career bests marked, and the five most similar players in a chosen season (`?season=`) |
+| `/compare` | Two to four players side by side in a season they all played: every stat with its percentile (against all players or the same position), grouped into scoring, playmaking, rebounding and defence, and overall impact, with the leader in each row and a count of categories led. The comparison appears when Compare is pressed and hides again when the lineup changes. The lineup, season, peer group and whether the comparison is shown live in the URL (`?ids=2544,201939&season=2015-16&peers=position&show=1`), so shared links open straight on the comparison; each open slot in the lineup opens a picker: a search box plus suggestions (the player's closest matches, or the top of last season's MVP race) |
 
 ### Code layout
 
@@ -143,6 +144,7 @@ frontend/src/
 │   ├── charts/          # ECharts wrapper and chart components (client-side)
 │   ├── mvp/             # MVP page components (season strip, ledger, funnel, validation diagram, ...)
 │   ├── players/         # Player search and profile components
+│   ├── compare/         # Compare page: lineup cards, add-player slots and picker, comparison table
 │   └── editorial.tsx    # Shared layout pieces: numbered sections, big figures, decision notes
 ├── content/
 │   └── mvp-method.ts    # Facts about the MVP model shown on /mvp/method (rules, funnel counts, features, settings)
@@ -151,6 +153,7 @@ frontend/src/
     ├── api/schema.ts    # Generated from backend/openapi.json (npm run gen:api)
     ├── format.ts        # Number, season and name formatting
     ├── player-search.ts # /players URL <-> API query mapping (invalid values are dropped, not sent)
+    ├── compare.ts       # /compare URL <-> state, metric groups, category leaders
     └── theme.ts         # Dark/light theme without a flash on load
 ```
 
@@ -204,6 +207,6 @@ GitHub Actions runs four jobs on every push to `main` and every pull request:
 | 0. Foundations | Serving database export, official player bio data, this document | Done |
 | 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
 | 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Done |
-| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | In progress (search and profile done) |
+| 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | In progress (search, profile and compare done) |
 | 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |

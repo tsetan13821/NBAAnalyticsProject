@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { PlayerAvatar } from "@/components/player-avatar";
 import type { SimilarPlayers as SimilarPlayersData } from "@/lib/api/client";
+import { compareHref, MAX_PLAYERS } from "@/lib/compare";
 import { stat } from "@/lib/format";
 
 /** The five players whose role scores were closest to this player's in one season. */
@@ -44,10 +45,23 @@ export function SimilarPlayers({ data }: { data: SimilarPlayersData }) {
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-xs text-muted-foreground">
-        <span className="hidden sm:inline">Points / rebounds / assists per game, then </span>
-        <span className="sm:hidden">Right: </span>distance between role scores (lower is closer).
-      </p>
+      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <p className="text-xs text-muted-foreground">
+          <span className="hidden sm:inline">Points / rebounds / assists per game, then </span>
+          <span className="sm:hidden">Right: </span>distance between role scores (lower is closer).
+        </p>
+        <Link
+          href={compareHref({
+            ids: [data.player.id, ...data.similar.slice(0, MAX_PLAYERS - 1).map((s) => s.player.id)],
+            season: data.season,
+            peers: "ALL",
+            show: true,
+          })}
+          className="eyebrow text-brand underline-offset-4 hover:underline"
+        >
+          Compare with the top {Math.min(data.similar.length, MAX_PLAYERS - 1)} →
+        </Link>
+      </div>
     </div>
   );
 }

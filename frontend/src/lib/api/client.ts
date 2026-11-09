@@ -29,6 +29,10 @@ export type SimilarPlayers = Schemas["SimilarPlayers"];
 export type SimilarPlayer = Schemas["SimilarPlayer"];
 export type PositionGroup = PlayerRef["position_group"];
 export type PlayerPage = Schemas["Page_PlayerSummary_"];
+export type PlayerComparison = Schemas["PlayerComparison"];
+export type ComparedPlayer = Schemas["ComparedPlayer"];
+export type MetricInfo = Schemas["MetricInfo"];
+export type MetricKey = MetricInfo["key"];
 
 /** Query parameters for the player search. Absent keys mean "no filter". */
 export type PlayerQuery = {
@@ -122,6 +126,14 @@ async function fetchSimilarPlayers(id: number, season?: string) {
   );
 }
 
+async function fetchComparison(ids: number[], season: string, peerGroup: "ALL" | "POSITION") {
+  "use cache";
+  cacheLife("hours");
+  return call(() =>
+    api.GET("/api/v1/players/compare", { params: { query: { ids, season, peer_group: peerGroup } } }),
+  );
+}
+
 // --- public getters ---------------------------------------------------------------------------------
 
 export async function getMeta(): Promise<Meta> {
@@ -160,4 +172,14 @@ export async function getPlayer(id: number): Promise<PlayerProfile | null> {
 export async function getSimilarPlayers(id: number, season?: string): Promise<SimilarPlayers | null> {
   await connection();
   return fetchSimilarPlayers(id, season);
+}
+
+/** `null` when one of the players has no stats in that season. */
+export async function getComparison(
+  ids: number[],
+  season: string,
+  peerGroup: "ALL" | "POSITION",
+): Promise<PlayerComparison | null> {
+  await connection();
+  return fetchComparison(ids, season, peerGroup);
 }
