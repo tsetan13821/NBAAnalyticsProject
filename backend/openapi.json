@@ -628,11 +628,27 @@
             "type": "integer"
           },
           "test_season": {
+            "description": "Held out: the model never saw these games while training",
             "title": "Test Season",
+            "type": "string"
+          },
+          "train_first_season": {
+            "title": "Train First Season",
+            "type": "string"
+          },
+          "train_games": {
+            "title": "Train Games",
+            "type": "integer"
+          },
+          "train_last_season": {
+            "title": "Train Last Season",
             "type": "string"
           }
         },
         "required": [
+          "train_first_season",
+          "train_last_season",
+          "train_games",
           "test_season",
           "test_games",
           "accuracy",

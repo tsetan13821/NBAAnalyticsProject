@@ -493,8 +493,17 @@ export interface components {
             record_baseline: number;
             /** Test Games */
             test_games: number;
-            /** Test Season */
+            /**
+             * Test Season
+             * @description Held out: the model never saw these games while training
+             */
             test_season: string;
+            /** Train First Season */
+            train_first_season: string;
+            /** Train Games */
+            train_games: number;
+            /** Train Last Season */
+            train_last_season: string;
         };
         /** Page[PlayerSummary] */
         Page_PlayerSummary_: {

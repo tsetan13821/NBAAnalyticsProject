@@ -341,6 +341,8 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
         team_seasons = pd.concat([team_seasons, build_current_team_seasons(current_standings)], ignore_index=True)
     mvp_candidates, mvp_seasons = build_mvp_tables()
     next_game_metrics = json.loads(NEXT_GAME_METRICS.read_text())
+    # The model trains on every season of game data before the held-out test season.
+    next_game_metrics['train_first_season_id'] = int(games['SEASON_ID'].min())
 
     tables = {  # insertion order respects foreign keys
         'franchises': build_franchises(),

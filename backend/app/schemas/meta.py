@@ -6,7 +6,10 @@ from app.schemas.common import PlayerRef, Season, TeamRef
 
 
 class NextGameModelInfo(BaseModel):
-    test_season: Season
+    train_first_season: Season
+    train_last_season: Season
+    train_games: int
+    test_season: Season = Field(description="Held out: the model never saw these games while training")
     test_games: int
     accuracy: float
     home_baseline: float = Field(description="Accuracy of always picking the home team")

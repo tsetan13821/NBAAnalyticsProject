@@ -19,6 +19,8 @@ def test_meta(get_json):
     model = meta["next_game_model"]
     assert 0.5 < model["accuracy"] < 1
     assert model["test_season"] == "2025-26"
+    assert (model["train_first_season"], model["train_last_season"]) == ("2020-21", "2024-25")
+    assert model["train_games"] > 4 * model["test_games"]
 
 
 def test_meta_separates_completed_and_current_seasons(get_json):

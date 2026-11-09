@@ -27,6 +27,9 @@ def get_meta(request: Request):
         "current_season_as_of": meta["current_season_as_of"] or None,
         "mvp_model": {"correct": int(meta["mvp_correct"]), "seasons": int(meta["mvp_seasons"])},
         "next_game_model": {
+            "train_first_season": _season_from_id(next_game["train_first_season_id"]),
+            "train_last_season": _season_from_id(next_game["test_season_id"] - 1),
+            "train_games": next_game["train_games"],
             "test_season": _season_from_id(next_game["test_season_id"]),
             "test_games": next_game["test_games"],
             "accuracy": next_game["accuracy"],

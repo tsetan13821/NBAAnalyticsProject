@@ -132,10 +132,12 @@ async function GameModel() {
         <Figure label="Pick the better record" value={percent(model.record_baseline)} />
       </FigureRow>
       <p className="mt-4 max-w-2xl font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
-        Share of {model.test_games.toLocaleString("en-US")} games in {model.test_season} called correctly, from each
-        team&apos;s record before tip-off. The model clearly beats &ldquo;home team wins&rdquo; but falls just
-        short of simply backing the team with the better record, an honest sign of how much a record alone can tell
-        you.
+        Trained on {model.train_games.toLocaleString("en-US")} games from {model.train_first_season} to{" "}
+        {model.train_last_season}, then tested on {model.test_games.toLocaleString("en-US")} games from{" "}
+        {model.test_season} that it never saw, using only each team&apos;s record before tip-off. (Games count once
+        both teams have played ten, because earlier records are too noisy.) The model clearly beats &ldquo;home team
+        wins&rdquo; but falls just short of simply backing the team with the better record, an honest sign of how
+        much a record alone can tell you.
       </p>
     </>
   );
