@@ -1,43 +1,25 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import os
+
+from utils.data import load_player_stats, load_raw_player_totals
+from src.features import infer_career_positions
 
 st.set_page_config(page_title="Player Stats & Comparison", page_icon="🏀", layout="wide")
 
 st.title("🏀 Player Comparison")
-st.markdown("Compare players across different metrics using raw statistical percentile rankings. Select a comparison mode to change the radar chart metrics.")
+st.markdown("Compare players across different metrics using statistical percentile rankings. Counting stats (points, rebounds, etc.) are **per game**. Select a comparison mode to change the radar chart metrics.")
 
 @st.cache_data
 def load_data():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    file_path = os.path.join(base_dir, "data", "raw", "nba_player_stats.csv")
-    if not os.path.exists(file_path):
-        st.error(f"Data file not found: {file_path}")
+    totals = load_raw_player_totals()
+    if totals is None:
+        st.error("Player stats file not found. Run `python -m src.data_collection` first.")
         return pd.DataFrame()
-    df = pd.read_csv(file_path)
-    
-    # Infer lifetime position for filtering
-    lifetime = df.groupby('PLAYER_NAME').sum(numeric_only=True).reset_index()
-    def _infer(row):
-        gp = max(1, row.get('GP', 1))
-        ast = row.get('AST', 0) / gp
-        reb = row.get('REB', 0) / gp
-        blk = row.get('BLK', 0) / gp
-        
-        if reb >= 8.5 or (reb >= 7.5 and blk >= 1.2): return "Center (C)"
-        if reb >= 6.5:
-            if ast >= 5.0: return "Small Forward (SF)"
-            return "Power Forward (PF)"
-        if ast >= 5.5: return "Point Guard (PG)"
-        if reb >= 5.5: return "Small Forward (SF)"
-        if ast >= 3.5: return "Point Guard (PG)"
-        return "Shooting Guard (SG)"
-    
-    lifetime['INFERRED_POS'] = lifetime.apply(_infer, axis=1)
-    pos_map = dict(zip(lifetime['PLAYER_NAME'], lifetime['INFERRED_POS']))
-    df['INFERRED_POS'] = df['PLAYER_NAME'].map(pos_map)
-    
+
+    # Positions come from career averages; displayed stats are per game.
+    df = load_player_stats().copy()
+    df['INFERRED_POS'] = df['PLAYER_ID'].map(infer_career_positions(totals))
     return df
 
 def compute_percentiles(df_season, metrics):
@@ -139,7 +121,7 @@ if player1 and player2:
             p2_row[m] = f"{p2_pct[m]:.1f}"
             
         comparison_data.extend([p1_row, p2_row])
-        st.dataframe(pd.DataFrame(comparison_data).set_index("Player"), use_container_width=True)
+        st.dataframe(pd.DataFrame(comparison_data).set_index("Player"), width='stretch')
         
         st.subheader("Raw Stats")
         raw_data = []
@@ -155,7 +137,7 @@ if player1 and player2:
                 r2_row[m] = f"{p2_raw[m]:.1f}"
         
         raw_data.extend([r1_row, r2_row])
-        st.dataframe(pd.DataFrame(raw_data).set_index("Player"), use_container_width=True)
+        st.dataframe(pd.DataFrame(raw_data).set_index("Player"), width='stretch')
         
         # Radar Chart
         st.subheader(f"Radar Chart ({comparison_mode} Metrics)")
@@ -196,4 +178,4 @@ if player1 and player2:
             title="Percentile Comparison (0-100)"
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')

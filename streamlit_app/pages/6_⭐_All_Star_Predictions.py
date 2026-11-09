@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-import os
+
+from utils.data import load_all_stars
 
 st.set_page_config(page_title="All-Star Predictions", page_icon="⭐", layout="wide")
 
@@ -15,16 +16,7 @@ The model strictly adheres to modern roster rules per conference:
 It penalizes "empty stats" by enforcing that no players are selected from a bottom-tier team (Seeds 11-15) and mathematically weighing Win percentage alongside their advanced individual efficiency.
 """)
 
-@st.cache_data
-def load_data():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    file_path = os.path.join(base_dir, "data", "processed", "all_stars_master.csv")
-    if not os.path.exists(file_path):
-        return None
-    df = pd.read_csv(file_path)
-    return df
-
-df = load_data()
+df = load_all_stars()
 
 if df is None:
     st.warning("All-Star data not found. Please run the All-Star prediction pipeline first.")
@@ -52,12 +44,16 @@ def render_conference_roster(conf_df, conf_name):
     
     # Format the stats
     styled_df['IMPACT_SCORE'] = styled_df['IMPACT_SCORE'].round(1)
+    styled_df[['PTS', 'REB', 'AST']] = styled_df[['PTS', 'REB', 'AST']].round(1)
     
     # Rename columns for presentation
     styled_df = styled_df.rename(columns={
         'PLAYER_NAME': 'Player',
         'TEAM_ABBREVIATION': 'Team',
         'POS': 'Position',
+        'PTS': 'PPG',
+        'REB': 'RPG',
+        'AST': 'APG',
         'Conf_Seed': 'Team Seed',
         'IMPACT_SCORE': 'Impact Score'
     })
@@ -65,7 +61,7 @@ def render_conference_roster(conf_df, conf_name):
     # Force index to 1-15
     styled_df.index = range(1, len(styled_df) + 1)
     
-    st.dataframe(styled_df, use_container_width=True, height=560)
+    st.dataframe(styled_df, width='stretch', height=560)
 
 with col_east:
     east_data = season_df[season_df['Conference'] == 'East']
@@ -76,11 +72,11 @@ with col_west:
     render_conference_roster(west_data, 'West')
 
 st.divider()
-st.markdown("### ?? All-Time Most Selections (Based on Model)")
+st.markdown("### 🏅 All-Time Most Selections (Based on Model)")
 col_all_time = st.columns(1)[0]
 with col_all_time:
     selections = df['PLAYER_NAME'].value_counts().head(20).reset_index()
     selections.columns = ['Player', 'Model All-Star Selections']
     selections.index = range(1, len(selections) + 1)
-    st.dataframe(selections, use_container_width=True)
+    st.dataframe(selections, width='stretch')
 

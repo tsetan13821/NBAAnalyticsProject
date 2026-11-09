@@ -1,40 +1,29 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import os
+
+from utils.data import load_mvp_data
+from src.nba_reference import CHAMPIONS
 
 st.set_page_config(page_title="Team Insights", page_icon="📈", layout="wide")
 
 st.title("📈 Team Historical Insights")
-st.markdown("Analyze team performance, win percentages, and championship history across the modern era.")
+st.markdown("Analyze team performance, win percentages, and championship history across the modern era. Relocated teams are grouped with their current franchise (e.g. Seattle SuperSonics → OKC).")
 
 @st.cache_data
 def load_team_data():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    data_path = os.path.join(base_dir, "data", "processed", "mvp_data.csv")
-    
-    if not os.path.exists(data_path):
+    df = load_mvp_data()
+    if df is None:
         return None
-        
-    df = pd.read_csv(data_path)
-    
-    # Extract unique team seasons
-    team_df = df[['SEASON', 'TEAM_ABBREVIATION', 'WINS', 'LOSSES', 'WinPCT']].drop_duplicates()
-    
-    # Map Champions
-    champions = {
-        '2000-01': 'LAL', '2001-02': 'LAL', '2002-03': 'SAS', '2003-04': 'DET',
-        '2004-05': 'SAS', '2005-06': 'MIA', '2006-07': 'SAS', '2007-08': 'BOS',
-        '2008-09': 'LAL', '2009-10': 'LAL', '2010-11': 'DAL', '2011-12': 'MIA',
-        '2012-13': 'MIA', '2013-14': 'SAS', '2014-15': 'GSW', '2015-16': 'CLE',
-        '2016-17': 'GSW', '2017-18': 'GSW', '2018-19': 'TOR', '2019-20': 'LAL',
-        '2020-21': 'MIL', '2021-22': 'GSW', '2022-23': 'DEN', '2023-24': 'BOS'
-    }
-    
-    def is_champ(row):
-        return row['TEAM_ABBREVIATION'] == champions.get(row['SEASON'])
-        
-    team_df['IS_CHAMPION'] = team_df.apply(is_champ, axis=1)
+
+    # One row per franchise-season (players carry their team's standings)
+    team_df = (
+        df[['SEASON', 'FRANCHISE_ABBREVIATION', 'WINS', 'LOSSES', 'WinPCT']]
+        .drop_duplicates(subset=['SEASON', 'FRANCHISE_ABBREVIATION'])
+        .rename(columns={'FRANCHISE_ABBREVIATION': 'TEAM_ABBREVIATION'})
+    )
+
+    team_df['IS_CHAMPION'] = team_df['TEAM_ABBREVIATION'] == team_df['SEASON'].map(CHAMPIONS)
     
     # Calculate starting year for line sorting
     team_df['Year_Start'] = team_df['SEASON'].apply(lambda x: int(str(x).split('-')[0]) if pd.notnull(x) and '-' in str(x) else 0)
@@ -118,7 +107,7 @@ with col2:
     
     chart = (line + points).properties(height=450).interactive()
     
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
     
     st.caption("🟡 Large Gold circles highlight Championship-winning seasons!")
 
@@ -148,6 +137,6 @@ st.dataframe(
         "Champion?": "Won Finals?"
     },
     hide_index=True,
-    use_container_width=True,
+    width='stretch',
     height=400
 )

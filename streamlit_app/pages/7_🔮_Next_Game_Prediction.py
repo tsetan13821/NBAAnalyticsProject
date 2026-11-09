@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import os
-import joblib
 import altair as alt
+
+from utils.data import load_game_matchups, load_next_game_model
 
 st.set_page_config(page_title="Next Game Prediction", page_icon="🔮", layout="wide")
 
@@ -13,29 +12,11 @@ Predict the outcome of an upcoming NBA game based on team momentum and venue str
 This model relies purely on situational form (Overall Win %, Home Win %, and Road Win %) rather than historical head-to-head records.
 """)
 
-@st.cache_resource
-def load_model():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    model_path = os.path.join(base_dir, "saved_models", "next_game_model.pkl")
-    if os.path.exists(model_path):
-        return joblib.load(model_path)
-    return None
-
-@st.cache_data
-def load_game_data():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    data_path = os.path.join(base_dir, "data", "processed", "game_matchups.csv")
-    if not os.path.exists(data_path):
-        return None
-    df = pd.read_csv(data_path)
-    df['GAME_DATE'] = pd.to_datetime(df['GAME_DATE'])
-    return df
-
-df = load_game_data()
-model = load_model()
+df = load_game_matchups()
+model = load_next_game_model()
 
 if model is None or df is None:
-    st.warning("Model or Matchup data not found. Please run python src/models/next_game_prediction.py first.")
+    st.warning("Model or matchup data not found. Run `python -m src.models.next_game_prediction` first.")
     st.stop()
 
 # Get all unique teams
@@ -110,7 +91,7 @@ features = pd.DataFrame([{
 # PREDICTION
 col_pred_btn, col_blank, col_blank2 = st.columns([1, 1, 1])
 with col_pred_btn:
-    predict_clicked = st.button("⚡ INITIALIZE PREDICTION", use_container_width=True, type="primary")
+    predict_clicked = st.button("⚡ INITIALIZE PREDICTION", width='stretch', type="primary")
 
 if predict_clicked:
     st.markdown("### 🎯 Prediction Result")
@@ -137,7 +118,7 @@ if predict_clicked:
         tooltip=['Team', alt.Tooltip('Probability:Q', format='.1%')]
     ).properties(height=200)
     
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
 
 st.divider()
 
@@ -172,4 +153,4 @@ line_chart = alt.Chart(combined_mom).mark_line(interpolate='monotone', strokeWid
     tooltip=['Team', 'Date:T', alt.Tooltip('Win%:Q', format='.1%')]
 ).properties(height=400)
 
-st.altair_chart(line_chart, use_container_width=True)
+st.altair_chart(line_chart, width='stretch')

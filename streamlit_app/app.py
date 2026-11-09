@@ -24,12 +24,12 @@ def main():
     
     Here is what you can explore using the sidebar:
     
-    - **🏀 Player Stats & Comparisons**: Dive deep into raw and percentile-based statistics. Compare players head-to-head across different roles (Scorers, Playmakers, Defenders) intuitively.
-    - **📊 Player Clusters**: Which players have exactly the same playstyle? We used un-supervised machine learning to group the entire league into unique behavioral clusters based on how they actually play, not just their positions.
-    - **⭐ All-Star Predictions**: Who is trending to be an All-Star? Our ML models evaluate current stats against historical voting trends to predict future highly-acclaimed selections.
-    - **🔮 Next Game Prediction**: Predict a player's performance in their upcoming matchup based on their recent momentum and the opponent's defensive vulnerabilities.
-    - **📈 Team Insights**: Analyze how entire rosters stack up against each other in offensive flow and defensive solidity.
-    - **🤖 Model Predictions & Methodology**: Go "under the hood" to see the precision of our Random Forest, XGBoost, and neural network algorithms.
+    - **🏀 Player Stats & Comparisons**: Compare two players head-to-head with per-game stats and percentile radar charts, league-wide or within an inferred position.
+    - **📊 Player Clusters**: Every player-season is assigned an archetype (Scorer, Playmaker, Rebounder, Defensive Player) from standardized stats, then **K-Means** splits each archetype into Elite / Very Good / Average tiers. Includes a similar-player finder.
+    - **⭐ All-Star Predictions**: A hand-weighted **Impact Score** (PIE, team win %, per-game production, net rating) builds 6-guard / 6-forward / 3-center rosters for each conference and season.
+    - **🔮 Next Game Prediction**: An **XGBoost** model predicts which team wins a matchup from each team's season-to-date overall, home and road win percentages.
+    - **📈 Team Insights**: Franchise win percentage over time, best and worst seasons, and championship history since 2000.
+    - **🤖 MVP Predictions**: An **XGBoost** MVP model evaluated with leave-one-season-out cross-validation, with the top candidates for any season.
 
     ---
     🗣️ **Ready to tip off?** 

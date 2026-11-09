@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import os
+
+from utils.data import load_clustered_players
 
 st.set_page_config(page_title="Player Clusters", page_icon="📊", layout="wide")
 
@@ -11,16 +12,7 @@ Explore player archetypes using **K-Means Clustering**. Players are grouped by t
 and then segmented into internal distinct tiers (**Elite, Very Good, Average**).
 """)
 
-@st.cache_data
-def load_data():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    file_path = os.path.join(base_dir, "data", "processed", "clustered_players_master.csv")
-    if not os.path.exists(file_path):
-        return None
-    df = pd.read_csv(file_path)
-    return df
-
-df = load_data()
+df = load_clustered_players()
 
 if df is None:
     st.warning("Cluster data not found. Please run the player clustering pipeline first.")
@@ -51,14 +43,14 @@ if selected_tier:
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Players Filtered", len(filtered_df))
 col2.metric("Elites Found", len(filtered_df[filtered_df['Tier'] == 'Elite']))
-col3.metric("Avg Points (Filtered)", round(filtered_df['PTS'].mean(), 1))
-col4.metric("Avg Minutes (Filtered)", round(filtered_df['MIN'].mean(), 1))
+col3.metric("Avg Points per Game", round(filtered_df['PTS'].mean(), 1))
+col4.metric("Avg Minutes per Game", round(filtered_df['MIN'].mean(), 1))
 
 st.divider()
 
 # --- INTERACTIVE SCATTER PLOT ---
 st.markdown("### 🔍 Interactive Stat Explorer")
-st.markdown("Compare players across different metrics. The chart is colored by their Tier.")
+st.markdown("Compare players across different metrics (counting stats are per game). The chart is colored by their Tier.")
 
 stat_cols = ['PTS', 'AST', 'REB', 'STL', 'BLK', 'USG_PCT', 'TS_PCT', 'MIN', 'PIE', 'NET_RATING']
 scol1, scol2 = st.columns(2)
