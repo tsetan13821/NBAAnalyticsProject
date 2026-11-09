@@ -6,3 +6,7 @@ Dockerfile
 .dockerignore
 **/*.test.ts
 **/*.test.tsx
+e2e
+playwright.config.ts
+playwright-report
+test-results

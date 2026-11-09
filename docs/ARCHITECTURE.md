@@ -240,13 +240,20 @@ frontend/src/
   - the franchise pages: standings order and games behind, URL state for the roster season and leader stat, the season table and the history chart
   - the MVP components and the chart option builder
 
-  End-to-end tests (Playwright) are planned for phase 4.
+- **End to end:** Playwright drives Chromium through the running stack (`frontend/e2e/`):
+  - every main-menu link, and not-found pages for unknown players, teams and games
+  - MVP races and the season picker, accent-insensitive search into a profile, the career chart's stat toggle, a shared comparison link
+  - the first upcoming game: its explanation, then sitting a player and returning to the injury report
+  - standings for all thirty teams, a franchise's titles and relocated seasons, re-ranking leaders without losing the roster season
+  - on a phone-sized screen, that no page scrolls sideways
+
+  Games and injury reports change daily, so these tests pick a game from the page rather than naming one; checks on specific values use finished seasons only.
 
 GitHub Actions runs four jobs on every push to `main` and every pull request:
 1. pipeline tests
 2. API lint (ruff) and tests, after building the database
 3. web: a check that the generated API types are current, then type check, lint, unit tests and a production build
-4. Docker Compose: builds both images, waits for their health checks, and checks a page renders with real data
+4. Docker Compose: builds both images, waits for their health checks, checks a page renders with real data, then runs the end-to-end tests against the stack (the Playwright report is uploaded if they fail)
 
 ## Roadmap
 
@@ -256,5 +263,5 @@ GitHub Actions runs four jobs on every push to `main` and every pull request:
 | 1. Backend API | FastAPI app, endpoints above, tests, Dockerfile | Done |
 | 2. Frontend foundation | Next.js app, design system, typed API client, MVP Race page | Done |
 | 3. Core pages | Home, player search/profile/compare, game predictor, franchise pages | Done |
-| 4. Ship | Hosting, end-to-end tests, README with screenshots; retire the Streamlit app | Planned |
+| 4. Ship | End-to-end tests and README with screenshots (done); hosting; retire the Streamlit app | In progress |
 | 5. Extensions | Archetype and All-Star pages, Basketball Reference data (MVP vote shares, real All-Star rosters) | Later |

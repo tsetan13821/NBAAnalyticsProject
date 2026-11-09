@@ -66,7 +66,7 @@ flowchart LR
 - **Training and serving are separate.** pandas, scikit-learn and XGBoost run only offline. The API needs only FastAPI, Pydantic and Python's built-in `sqlite3`. The game model is linear, so the API re-adds its stored coefficients in pure Python to answer what-ifs; tests check it matches the pipeline.
 - **One contract.** The API's OpenAPI schema is committed. The frontend's TypeScript types are generated from it, and CI fails if either drifts.
 - **Read-only data.** Everything the site shows is precomputed into one SQLite file. That makes the API stateless and easy to run anywhere, and responses are safe to cache.
-- **Tested.** About 280 tests in total, across the pipeline (data integrity, no look-ahead in the game model, the injury report parser), the API (endpoint behaviour against the real database) and the web app (components, URL state, chart options). GitHub Actions runs them, plus lint, type checks and a Docker Compose smoke test, on every pull request.
+- **Tested.** About 300 tests in total, across the pipeline (data integrity, no look-ahead in the game model, the injury report parser), the API (endpoint behaviour against the real database), the web app (components, URL state, chart options) and end to end (Playwright drives a real browser through search, a game what-if and the franchise pages, on desktop and phone sizes). GitHub Actions runs them, plus lint and type checks, on every pull request, the end-to-end tests against the Docker Compose stack.
 
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) covers the design in depth: data model, API, pages, decisions and roadmap. [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) covers the original data pipeline and MVP model.
 
@@ -155,6 +155,10 @@ ruff check . && pytest
 
 cd ../frontend                          # web app
 npm run typecheck && npm run lint && npm test
+
+docker compose up -d --build --wait     # end-to-end, from the repository root; then, from frontend/:
+npx playwright install chromium         # once
+npm run test:e2e                        # BASE_URL=... to test another address
 ```
 
 If you change the API on purpose, regenerate its committed schema with `python -m scripts.export_openapi` (from `backend/`). Then regenerate the frontend's types with `npm run gen:api` (from `frontend/`).
