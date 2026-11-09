@@ -13,6 +13,13 @@ next_game:
   seasons: ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
   min_games_before: 10 # Skip games where either team has played fewer games than this (records too noisy)
 
+game_model:
+  # Seasons of game logs to fetch. The earliest seasons only warm up the Elo ratings and players'
+  # prior-season values; the model itself trains on seasons that have pre-game injury reports.
+  first_season: "2015-16"          # team game logs (Elo warm-up starts here)
+  player_first_season: "2017-18"   # player game logs (two seasons of priors before training starts)
+  injury_first_season: "2019-20"   # official NBA injury reports are archived from 2018-19 onwards
+
 features:
   base:
     - GP       # Games Played

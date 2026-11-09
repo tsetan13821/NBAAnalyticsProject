@@ -2,7 +2,7 @@
 -- Read-only at runtime. Every stat column ending in _pg is a per-game average;
 -- *_pct columns are fractions (0.512 = 51.2%).
 
-PRAGMA user_version = 2;  -- bump when the schema changes
+PRAGMA user_version = 3;  -- bump when the schema changes
 
 CREATE TABLE meta (
     key   TEXT PRIMARY KEY,
@@ -172,3 +172,50 @@ CREATE TABLE team_game_log (
     PRIMARY KEY (team_abbr, game_id)
 );
 CREATE INDEX ix_team_game_log_team_date ON team_game_log (team_abbr, game_date);
+
+-- The game model (src/game_model) on the season in progress: every game played so far, as predicted
+-- before it, and the coming week. Built by `python -m src.game_model.live`; the model itself and its
+-- evaluation are JSON in meta (game_model, game_model_metrics, game_live).
+CREATE TABLE game_predictions (
+    game_id            TEXT PRIMARY KEY,
+    season             TEXT NOT NULL,
+    game_date          TEXT NOT NULL,              -- ISO date (US Eastern)
+    tip_et             TEXT,                       -- 'HH:MM' Eastern, upcoming games only
+    home_abbr          TEXT NOT NULL REFERENCES franchises (abbr),
+    away_abbr          TEXT NOT NULL REFERENCES franchises (abbr),
+    played             INTEGER NOT NULL CHECK (played IN (0, 1)),
+    home_pts           INTEGER,                    -- NULL until played
+    away_pts           INTEGER,
+    pred_margin        REAL NOT NULL,              -- predicted home margin, points
+    home_win_prob      REAL NOT NULL,
+    home_wins          INTEGER NOT NULL,           -- records BEFORE the game
+    home_losses        INTEGER NOT NULL,
+    away_wins          INTEGER NOT NULL,
+    away_losses        INTEGER NOT NULL,
+    home_elo           REAL NOT NULL,
+    away_elo           REAL NOT NULL,
+    home_recent_value  REAL NOT NULL,              -- player value each team has fielded lately ...
+    away_recent_value  REAL NOT NULL,
+    home_tonight_value REAL NOT NULL,              -- ... and expects to have tonight
+    away_tonight_value REAL NOT NULL,
+    features           TEXT NOT NULL               -- JSON {feature: value}, the model's inputs
+);
+CREATE INDEX ix_game_predictions_date ON game_predictions (game_date);
+
+-- Every rostered player in those games, for the injury list and what-if changes.
+CREATE TABLE game_players (
+    game_id          TEXT NOT NULL REFERENCES game_predictions (game_id),
+    team_abbr        TEXT NOT NULL REFERENCES franchises (abbr),
+    player_id        INTEGER NOT NULL,             -- NBA.com id; not every player is in `players`
+    name             TEXT NOT NULL,
+    value            REAL NOT NULL,                -- Game Score above replacement at his usual minutes
+    rate_above       REAL NOT NULL,                -- the same per minute
+    expected_minutes REAL NOT NULL,
+    participation    REAL NOT NULL,                -- share of the team's last 10 games he played
+    status           TEXT CHECK (status IN ('Out', 'Doubtful', 'Questionable', 'Probable', 'Available')),
+    chance           REAL NOT NULL,                -- chance of playing the model used
+    reason           TEXT,
+    status_source    TEXT CHECK (status_source IN ('report', 'carried')),
+    played           INTEGER CHECK (played IN (0, 1)),  -- NULL until the game is played
+    PRIMARY KEY (game_id, player_id)
+);

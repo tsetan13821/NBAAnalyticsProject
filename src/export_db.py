@@ -1,4 +1,4 @@
-"""Build the read-only serving database (backend/data/nba.db) and the portable next-game model.
+"""Build the read-only serving database (backend/data/nba.db).
 
 Everything the API needs is precomputed here, so the API itself only does lookups:
   - per-game player stats, archetypes and tiers
@@ -8,7 +8,8 @@ Everything the API needs is precomputed here, so the API itself only does lookup
   - team standings and game-by-game records
   - the season in progress (if fetched): stats so far and standings, marked in_progress and
     left out of everything model-based (MVP tables, archetypes, similar players)
-  - the next-game XGBoost model exported to plain JSON trees (no xgboost needed to serve it)
+  - the game model's predictions for the season in progress, each game's players and their
+    injury status, and the model itself (coefficients, as JSON in meta) for what-if changes
 
 Run from the repository root:
     python -m src.export_db
@@ -19,7 +20,6 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 
-import joblib
 import numpy as np
 import pandas as pd
 from nba_api.stats.static import teams as nba_teams
@@ -33,14 +33,16 @@ from src.paths import (
     CURRENT_SEASON_STATS,
     DB_SCHEMA,
     GAME_MATCHUPS,
+    GAME_MODEL,
+    GAME_MODEL_METRICS,
+    GAME_PLAYERS,
+    GAME_PREDICTIONS,
+    LIVE_META,
     MVP_DATA,
-    NEXT_GAME_METRICS,
-    NEXT_GAME_MODEL,
     PLAYER_BIO,
     RAW_PLAYER_STATS,
     SERVING_DB,
     SERVING_DIR,
-    SERVING_NEXT_GAME_MODEL,
 )
 
 # sqlite3 cannot bind numpy scalars directly
@@ -298,20 +300,38 @@ def build_team_game_log(games):
     return log
 
 
-def export_next_game_model(path):
-    """Export the XGBoost model as plain JSON trees that can be evaluated without xgboost."""
-    booster = joblib.load(NEXT_GAME_MODEL).get_booster()
-    config = json.loads(booster.save_config())
-    base_score = float(str(config['learner']['learner_model_param']['base_score']).strip('[]'))
-    model = {
-        'format': 'xgboost-json-dump',
-        'objective': config['learner']['objective']['name'],
-        'base_score': base_score,
-        'features': booster.feature_names,
-        'trees': [json.loads(tree) for tree in booster.get_dump(dump_format='json')],
-    }
-    path.write_text(json.dumps(model, separators=(',', ':')))
-    return len(model['trees'])
+def build_game_tables(features):
+    """The season in progress as predicted by the game model (empty when no season is under way)."""
+    if not (GAME_PREDICTIONS.exists() and GAME_PLAYERS.exists()):
+        return pd.DataFrame(), pd.DataFrame()
+    g = pd.read_csv(GAME_PREDICTIONS, dtype={'GAME_ID': str})
+    games = pd.DataFrame({
+        'game_id': g['GAME_ID'], 'season': g['SEASON'], 'game_date': g['GAME_DATE'], 'tip_et': g['TIP_ET'],
+        'home_abbr': g['HOME'], 'away_abbr': g['AWAY'], 'played': g['PLAYED'].astype(int),
+        'home_pts': g['HOME_PTS'].astype('Int64'), 'away_pts': g['AWAY_PTS'].astype('Int64'),
+        'pred_margin': g['PRED_MARGIN'].round(3), 'home_win_prob': g['HOME_WIN_PROB'].round(4),
+    })
+    for side in ('home', 'away'):
+        upper = side.upper()
+        wins = (g[f'{upper}_WIN_PCT'] * g[f'{upper}_GP']).round().astype(int)
+        games[f'{side}_wins'], games[f'{side}_losses'] = wins, g[f'{upper}_GP'].astype(int) - wins
+        games[f'{side}_elo'] = g[f'{upper}_ELO'].round(1)
+        for kind in ('recent', 'tonight'):
+            games[f'{side}_{kind}_value'] = g[f'{upper}_{kind.upper()}_VALUE'].round(4)
+    games['features'] = [json.dumps({f: round(float(v), 4) for f, v in zip(features, row)})
+                         for row in g[features].to_numpy()]
+
+    p = pd.read_csv(GAME_PLAYERS, dtype={'GAME_ID': str})
+    players = pd.DataFrame({
+        'game_id': p['GAME_ID'], 'team_abbr': p['TEAM'], 'player_id': p['PLAYER_ID'],
+        'name': p['PLAYER_NAME'], 'value': p['VALUE'].round(4), 'rate_above': p['RATE_ABOVE'].round(6),
+        'expected_minutes': p['EXP_MIN'].round(3), 'participation': p['PARTICIPATION'].round(3),
+        'status': p['STATUS'], 'chance': p['CHANCE'].round(3), 'reason': p['REASON'],
+        'status_source': p['STATUS_SOURCE'],
+    })
+    played = p['GAME_ID'].map(g.set_index('GAME_ID')['PLAYED'])
+    players['played'] = p['PLAYED'].astype(int).where(played.astype(bool))
+    return games.sort_values(['game_date', 'game_id']), players
 
 
 # --- writing ----------------------------------------------------------------------------
@@ -323,7 +343,7 @@ def _insert(conn, table, df):
     conn.executemany(f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})", rows)
 
 
-def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
+def build_database(db_path=SERVING_DB):
     raw_totals = pd.read_csv(RAW_PLAYER_STATS)
     mvp_data = pd.read_csv(MVP_DATA)
     clustered = pd.read_csv(CLUSTERED_PLAYERS)
@@ -340,9 +360,8 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
     if current_standings is not None:
         team_seasons = pd.concat([team_seasons, build_current_team_seasons(current_standings)], ignore_index=True)
     mvp_candidates, mvp_seasons = build_mvp_tables()
-    next_game_metrics = json.loads(NEXT_GAME_METRICS.read_text())
-    # The model trains on every season of game data before the held-out test season.
-    next_game_metrics['train_first_season_id'] = int(games['SEASON_ID'].min())
+    game_model = json.loads(GAME_MODEL.read_text())
+    game_predictions, game_players = build_game_tables(game_model['features'])
 
     tables = {  # insertion order respects foreign keys
         'franchises': build_franchises(),
@@ -355,6 +374,8 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
         'mvp_candidates': mvp_candidates,
         'mvp_seasons': mvp_seasons,
         'team_game_log': build_team_game_log(games),
+        'game_predictions': game_predictions,
+        'game_players': game_players,
     }
     meta = {
         'built_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
@@ -364,7 +385,9 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
         'current_season_as_of': str(current_standings['AS_OF'].iloc[0]) if current_standings is not None else '',
         'mvp_correct': str(int(mvp_seasons['correct'].sum())),
         'mvp_seasons': str(len(mvp_seasons)),
-        'next_game_metrics': json.dumps(next_game_metrics),
+        'game_model': json.dumps(game_model),
+        'game_model_metrics': GAME_MODEL_METRICS.read_text(),
+        'game_live': LIVE_META.read_text() if LIVE_META.exists() and len(game_predictions) else '{}',
         'rosters_as_of': str(bio['ROSTERS_AS_OF'].max()),
     }
     tables['meta'] = pd.DataFrame({'key': list(meta), 'value': list(meta.values())})
@@ -379,7 +402,8 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
         conn.executescript(DB_SCHEMA.read_text())
         with conn:
             for table, df in tables.items():
-                _insert(conn, table, df)
+                if len(df):
+                    _insert(conn, table, df)
         violations = conn.execute('PRAGMA foreign_key_check').fetchall()
         if violations:
             raise RuntimeError(f"Foreign key violations: {violations[:5]}")
@@ -388,19 +412,15 @@ def build_database(db_path=SERVING_DB, model_path=SERVING_NEXT_GAME_MODEL):
     finally:
         conn.close()
     tmp_path.replace(db_path)
-
-    trees = export_next_game_model(model_path)
-    counts = {table: len(df) for table, df in tables.items()}
-    return counts, trees
+    return {table: len(df) for table, df in tables.items()}
 
 
 def main():
-    counts, trees = build_database()
+    counts = build_database()
     size_mb = SERVING_DB.stat().st_size / 1e6
     print(f"Built {SERVING_DB} ({size_mb:.1f} MB)")
     for table, n in counts.items():
         print(f"  {table:<20} {n:>7,} rows")
-    print(f"Exported next-game model ({trees} trees) to {SERVING_NEXT_GAME_MODEL}")
 
 
 if __name__ == "__main__":

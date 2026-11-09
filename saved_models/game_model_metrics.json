@@ -1,0 +1,318 @@
+{
+  "train_first_season": "2019-20",
+  "train_last_season": "2024-25",
+  "train_games": 7059,
+  "test_season": "2025-26",
+  "test_games": 1230,
+  "held_out": {
+    "accuracy": 0.6935,
+    "log_loss": 0.5811,
+    "brier": 0.199,
+    "margin_mae": 11.07
+  },
+  "held_out_after_10_games": {
+    "accuracy": 0.694,
+    "log_loss": 0.5803,
+    "brier": 0.1987,
+    "games": 1075
+  },
+  "baselines": {
+    "home_team": 0.5545,
+    "better_record": 0.6699,
+    "elo": {
+      "accuracy": 0.6756,
+      "log_loss": 0.6071,
+      "brier": 0.2089
+    }
+  },
+  "models": {
+    "margin_ridge": {
+      "accuracy": 0.6935,
+      "log_loss": 0.5811,
+      "brier": 0.199,
+      "margin_mae": 11.07
+    },
+    "logistic": {
+      "accuracy": 0.6976,
+      "log_loss": 0.5824,
+      "brier": 0.1995
+    },
+    "xgboost": {
+      "accuracy": 0.6854,
+      "log_loss": 0.5848,
+      "brier": 0.2006
+    }
+  },
+  "ablation": [
+    {
+      "added": "strength",
+      "features": [
+        "ELO_DIFF"
+      ],
+      "accuracy": 0.6911,
+      "log_loss": 0.5975,
+      "brier": 0.2053
+    },
+    {
+      "added": "home",
+      "features": [
+        "ELO_DIFF",
+        "NO_CROWD",
+        "REDUCED_CROWD"
+      ],
+      "accuracy": 0.6894,
+      "log_loss": 0.5976,
+      "brier": 0.2053
+    },
+    {
+      "added": "season",
+      "features": [
+        "ELO_DIFF",
+        "NO_CROWD",
+        "REDUCED_CROWD",
+        "NET_DIFF",
+        "FORM_DIFF"
+      ],
+      "accuracy": 0.6935,
+      "log_loss": 0.5929,
+      "brier": 0.203
+    },
+    {
+      "added": "schedule",
+      "features": [
+        "ELO_DIFF",
+        "NO_CROWD",
+        "REDUCED_CROWD",
+        "NET_DIFF",
+        "FORM_DIFF",
+        "REST_DIFF",
+        "HOME_B2B",
+        "AWAY_B2B",
+        "HOME_3IN4",
+        "AWAY_3IN4",
+        "AWAY_TRAVEL",
+        "AWAY_TZ_EAST"
+      ],
+      "accuracy": 0.6967,
+      "log_loss": 0.5933,
+      "brier": 0.2034
+    },
+    {
+      "added": "roster",
+      "features": [
+        "ELO_DIFF",
+        "NO_CROWD",
+        "REDUCED_CROWD",
+        "NET_DIFF",
+        "FORM_DIFF",
+        "REST_DIFF",
+        "HOME_B2B",
+        "AWAY_B2B",
+        "HOME_3IN4",
+        "AWAY_3IN4",
+        "AWAY_TRAVEL",
+        "AWAY_TZ_EAST",
+        "FULL_DIFF",
+        "RECENT_DIFF"
+      ],
+      "accuracy": 0.6862,
+      "log_loss": 0.589,
+      "brier": 0.2017
+    },
+    {
+      "added": "availability",
+      "features": [
+        "ELO_DIFF",
+        "NO_CROWD",
+        "REDUCED_CROWD",
+        "NET_DIFF",
+        "FORM_DIFF",
+        "REST_DIFF",
+        "HOME_B2B",
+        "AWAY_B2B",
+        "HOME_3IN4",
+        "AWAY_3IN4",
+        "AWAY_TRAVEL",
+        "AWAY_TZ_EAST",
+        "FULL_DIFF",
+        "RECENT_DIFF",
+        "AVAIL_DIFF"
+      ],
+      "accuracy": 0.6935,
+      "log_loss": 0.5811,
+      "brier": 0.199
+    },
+    {
+      "added": "availability (who actually played)",
+      "features": [
+        "ELO_DIFF",
+        "NO_CROWD",
+        "REDUCED_CROWD",
+        "NET_DIFF",
+        "FORM_DIFF",
+        "REST_DIFF",
+        "HOME_B2B",
+        "AWAY_B2B",
+        "HOME_3IN4",
+        "AWAY_3IN4",
+        "AWAY_TRAVEL",
+        "AWAY_TZ_EAST",
+        "FULL_DIFF",
+        "RECENT_DIFF",
+        "AVAIL_DIFF"
+      ],
+      "accuracy": 0.6886,
+      "log_loss": 0.5776,
+      "brier": 0.1974
+    }
+  ],
+  "calibration": [
+    {
+      "from": 0.5,
+      "to": 0.55,
+      "games": 198,
+      "predicted": 0.5239,
+      "actual": 0.5455
+    },
+    {
+      "from": 0.55,
+      "to": 0.6,
+      "games": 218,
+      "predicted": 0.5758,
+      "actual": 0.5872
+    },
+    {
+      "from": 0.6,
+      "to": 0.65,
+      "games": 154,
+      "predicted": 0.6262,
+      "actual": 0.6688
+    },
+    {
+      "from": 0.65,
+      "to": 0.7,
+      "games": 151,
+      "predicted": 0.6752,
+      "actual": 0.649
+    },
+    {
+      "from": 0.7,
+      "to": 0.75,
+      "games": 155,
+      "predicted": 0.7256,
+      "actual": 0.7613
+    },
+    {
+      "from": 0.75,
+      "to": 0.8,
+      "games": 122,
+      "predicted": 0.7733,
+      "actual": 0.7787
+    },
+    {
+      "from": 0.8,
+      "to": 0.85,
+      "games": 111,
+      "predicted": 0.8233,
+      "actual": 0.8468
+    },
+    {
+      "from": 0.85,
+      "to": 0.9,
+      "games": 75,
+      "predicted": 0.8719,
+      "actual": 0.8667
+    },
+    {
+      "from": 0.9,
+      "to": 0.95,
+      "games": 38,
+      "predicted": 0.9193,
+      "actual": 0.9474
+    },
+    {
+      "from": 0.95,
+      "to": 1.0,
+      "games": 8,
+      "predicted": 0.9652,
+      "actual": 1.0
+    }
+  ],
+  "walk_forward": [
+    {
+      "season": "2022-23",
+      "train_games": 3369,
+      "test_games": 1230,
+      "accuracy": 0.6439,
+      "log_loss": 0.6301,
+      "brier": 0.2202,
+      "baselines": {
+        "home_team": 0.5805,
+        "better_record": 0.5935,
+        "elo": {
+          "accuracy": 0.6333,
+          "log_loss": 0.6531,
+          "brier": 0.2295
+        }
+      }
+    },
+    {
+      "season": "2023-24",
+      "train_games": 4599,
+      "test_games": 1230,
+      "accuracy": 0.6772,
+      "log_loss": 0.5978,
+      "brier": 0.2057,
+      "baselines": {
+        "home_team": 0.5431,
+        "better_record": 0.6333,
+        "elo": {
+          "accuracy": 0.6431,
+          "log_loss": 0.6254,
+          "brier": 0.2184
+        }
+      }
+    },
+    {
+      "season": "2024-25",
+      "train_games": 5829,
+      "test_games": 1230,
+      "accuracy": 0.6854,
+      "log_loss": 0.5936,
+      "brier": 0.2044,
+      "baselines": {
+        "home_team": 0.5439,
+        "better_record": 0.6407,
+        "elo": {
+          "accuracy": 0.6512,
+          "log_loss": 0.6232,
+          "brier": 0.2168
+        }
+      }
+    },
+    {
+      "season": "2025-26",
+      "train_games": 7059,
+      "test_games": 1230,
+      "accuracy": 0.6935,
+      "log_loss": 0.5811,
+      "brier": 0.199,
+      "baselines": {
+        "home_team": 0.5545,
+        "better_record": 0.6699,
+        "elo": {
+          "accuracy": 0.6756,
+          "log_loss": 0.6071,
+          "brier": 0.2089
+        }
+      }
+    }
+  ],
+  "play_rates": {
+    "Out": 0.001,
+    "Doubtful": 0.022,
+    "Questionable": 0.549,
+    "Probable": 0.953,
+    "Available": 0.948
+  }
+}
