@@ -7,8 +7,9 @@ const nextConfig: NextConfig = {
   // so `npm start` keeps working locally.
   output: process.env.STANDALONE === "1" ? "standalone" : undefined,
   images: {
-    // Player headshots come from the NBA's public CDN, resized by the Next.js image optimizer.
-    remotePatterns: [new URL("https://cdn.nba.com/headshots/**")],
+    // Player headshots load straight from the NBA's CDN, which has them in two sizes (see the loader).
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
   },
   turbopack: {
     rules: {

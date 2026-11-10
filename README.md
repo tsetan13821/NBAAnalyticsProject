@@ -70,6 +70,14 @@ flowchart LR
 
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) covers the design in depth: data model, API, pages, decisions and roadmap. [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) covers the original data pipeline and MVP model.
 
+## Hosting
+
+- **API on Google Cloud Run.** [`deploy-api.yml`](.github/workflows/deploy-api.yml) builds the API image, with the serving database baked in, pushes it to Artifact Registry and deploys it. It runs whenever the code or data it's built from changes on `main`, including after each refresh. GitHub signs in to Google Cloud through Workload Identity Federation, so no keys are stored anywhere. The service scales to zero when idle and to at most two instances.
+- **Website on Vercel.** It redeploys only when `frontend/` changes ([`vercel.json`](frontend/vercel.json)), because pages fetch their data from the API at request time.
+- **Player photos** load in the visitor's browser straight from NBA.com's CDN, which publishes each headshot in a small and a large size. A small [image loader](frontend/src/lib/image-loader.ts) picks the right one, so nothing is resized on the host.
+
+To set up your own copy, run [`scripts/setup-gcp.sh`](scripts/setup-gcp.sh) once in Cloud Shell, in a Google Cloud project with billing enabled. It creates the image repository, the service accounts and the GitHub trust, and prints the repository variables to add on GitHub. Then import the repository on Vercel with `frontend` as the root directory and `API_URL` set to the Cloud Run address.
+
 ## Keeping the predictions live
 
 Results and injury reports change through the day, so the game data refreshes itself on two machines.
@@ -79,7 +87,7 @@ stats.nba.com, the source of results and the schedule, refuses cloud servers. Th
 - **GitHub Actions** ([`refresh-games.yml`](.github/workflows/refresh-games.yml)) refreshes the injury report five times a day, from the morning to before the late tip-offs (US Eastern).
 - **A scheduled task on a home PC** ([`scripts/install-refresh-task.ps1`](scripts/install-refresh-task.ps1)) refreshes everything, results included, three times a day. It works in its own clone of the repository, so it never touches work in progress. A run missed while the PC was off starts when it's back on.
 
-Both run `python -m src.game_model.refresh --push`. It checks the serving database still builds, and commits only when results or injury statuses changed (a new timestamp alone isn't a change). If the other machine pushed first, it starts again from that commit instead of merging generated files. A host that deploys on push picks up each update.
+Both run `python -m src.game_model.refresh --push`. It checks the serving database still builds, and commits only when results or injury statuses changed (a new timestamp alone isn't a change). If the other machine pushed first, it starts again from that commit instead of merging generated files. Each update then redeploys the API with the new data (see [Hosting](#hosting)).
 
 To set up the home refresh on Windows (Python 3.11+, signed in to GitHub with git):
 

@@ -1,8 +1,9 @@
 name: refresh games
 
 # Keeps the injury report on the game predictor fresh: downloads the latest report, re-predicts the
-# season in progress, and commits the data if it changed. A host that deploys on push rebuilds the
-# serving database (src.export_db) from these files.
+# season in progress, and commits the data if it changed. Then deploy-api.yml rebuilds the API image,
+# with its serving database, from the new data. (Pushes made with the workflow's own token don't start
+# other workflows, so this one calls it directly.)
 #
 # Results and the schedule come from stats.nba.com, which refuses GitHub's servers, so this run skips
 # them (--injuries-only). A scheduled task on a home PC refreshes those (scripts/install-refresh-task.ps1);
@@ -36,6 +37,8 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
     steps:
       - uses: actions/checkout@v7
 
@@ -60,7 +63,18 @@ jobs:
       # Refresh, check the serving database still builds, commit if the games changed, push. If the home
       # PC's refresh pushed first, start again from its commit.
       - name: Refresh and publish the injury report
+        id: publish
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          before=$(git rev-parse HEAD)
           python -m src.game_model.refresh --push --injuries-only
+          [ "$(git rev-parse HEAD)" != "$before" ] && echo "published=true" >> "$GITHUB_OUTPUT" || true
+
+  deploy:
+    needs: refresh
+    if: needs.refresh.outputs.published == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy-api.yml
