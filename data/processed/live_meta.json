@@ -1,10 +1,10 @@
 {
   "season": "2026-27",
-  "as_of": "2026-11-13T04:42-05:00",
-  "last_game_date": "2026-11-11",
-  "injury_report": "2026-11-13T04:30-05:00",
-  "games_played": 170,
-  "correct_so_far": 121,
+  "as_of": "2026-11-13T09:30-05:00",
+  "last_game_date": "2026-11-12",
+  "injury_report": "2026-11-13T09:30-05:00",
+  "games_played": 174,
+  "correct_so_far": 125,
   "upcoming_games": 52,
   "fetch_failed": []
 }
