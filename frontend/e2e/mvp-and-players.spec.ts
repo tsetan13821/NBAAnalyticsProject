@@ -42,3 +42,15 @@ test("a shared comparison link opens on the comparison", async ({ page }) => {
   // Curry's unanimous MVP season: 30.1 points a game, the best of the two
   await expect(scoring.getByRole("row", { name: /^Points/ })).toContainText("30.1 (best)");
 });
+
+// NBA.com's CDN refuses headless browsers (a visible Chrome loads the photos, and the avatars here fall
+// back to initials), so this checks which headshot the page asks for, not that it arrives.
+test("avatars ask NBA.com for its small headshot, the profile for the large one", async ({ page }) => {
+  const small = page.waitForRequest(/cdn\.nba\.com\/headshots\/.*\/260x190\//);
+  await page.goto("/mvp/2015-16");
+  await small;
+
+  const large = page.waitForRequest(/cdn\.nba\.com\/headshots\/.*\/1040x760\/203999\.png/);
+  await page.goto("/players/203999");
+  await large;
+});

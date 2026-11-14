@@ -3,6 +3,14 @@ name: tests
 on:
   push:
     branches: [main]
+    # The game refresh (src/game_model/refresh.py) commits only these, several times a day; it checks
+    # the serving database still builds before it pushes, and deploy-api.yml smoke-tests the result.
+    paths-ignore:
+      - data/raw/games/**
+      - data/raw/injuries/**
+      - data/processed/game_predictions.csv
+      - data/processed/game_players.csv
+      - data/processed/live_meta.json
   pull_request:
 
 jobs:

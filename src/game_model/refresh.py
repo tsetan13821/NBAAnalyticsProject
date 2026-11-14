@@ -26,7 +26,7 @@ from src.paths import PROJECT_ROOT
 DATA_FILES = ['data/raw/games', 'data/raw/injuries', 'data/processed/game_predictions.csv',
               'data/processed/game_players.csv', 'data/processed/live_meta.json']
 TIMESTAMP_ONLY = 'data/processed/live_meta.json'  # changes on every run; not worth a commit on its own
-COMMIT_MESSAGE = "data: refresh game predictions [skip ci]"
+COMMIT_MESSAGE = "data: refresh game predictions"  # tests.yml ignores these; deploy-api.yml runs
 ATTEMPTS = 3
 
 

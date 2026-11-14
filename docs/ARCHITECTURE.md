@@ -30,7 +30,7 @@ flowchart LR
 | Backend | FastAPI, Pydantic | Typed, read-only JSON API; what-if game predictions |
 | Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui, ECharts | Pages and interactive charts; API types generated from the OpenAPI schema |
 
-Hosting is deliberately undecided. Everything is configured through environment variables and runs in Docker, so the same build can move between hosts.
+The API runs on Google Cloud Run and the website on Vercel (see [Deployment](#deployment)). Everything is configured through environment variables and the API runs in Docker, so the same build can move between hosts.
 
 ## Design principles
 
@@ -92,10 +92,10 @@ The refresh runs on two machines, because stats.nba.com (results and the schedul
 Both run `python -m src.game_model.refresh --push`, which:
 
 - refreshes the data and checks the serving database still builds;
-- commits only if results or statuses changed, with `[skip ci]`; the timestamp alone isn't enough, and gzip files are written with a fixed header time so unchanged data gives the same bytes;
-- pushes to `main`, where a host that deploys on push picks it up.
+- commits only if results or statuses changed (the tests workflow ignores commits of just these files); the timestamp alone isn't enough, and gzip files are written with a fixed header time so unchanged data gives the same bytes;
+- pushes to `main`, which redeploys the API with the new data: through the push itself from the home PC, and by calling `deploy-api.yml` directly from the GitHub Action (pushes made with a workflow's own token don't start other workflows).
 
-When both machines push at about the same time, the later push is rejected. That run then starts again from the other's commit instead of merging generated files line by line. GitHub can start scheduled runs late, so the site is fresh to within a few hours, not minutes. A worker beside the API, writing to a separate live database, would close that gap; it depends on where the site is hosted.
+When both machines push at about the same time, the later push is rejected. That run then starts again from the other's commit instead of merging generated files line by line. GitHub can start scheduled runs late, so the site is fresh to within a few hours, not minutes. A worker beside the API, writing to a separate live database, would close that gap.
 
 Injury statuses are decided per team. Reports come every 15 minutes in 2026-27. Where the latest report lists the team for that game, its statuses are used. Otherwise the Out and Doubtful players from the team's most recent listing are carried forward. This covers games beyond the latest report, and teams whose entry still reads NOT YET SUBMITTED. A team with nobody injured isn't in the report at all, so nothing is carried if it has played since its last listing.
 
@@ -220,6 +220,20 @@ frontend/src/
 - **Headshots** come from the NBA CDN through the Next.js image optimizer. Players without a photo fall back to their initials.
 - **Small diagrams** (the season strip, the candidate funnel, the validation diagram) are plain HTML and CSS rather than chart components, so they render on the server with no JavaScript.
 - **Teams** are shown as an abbreviation badge in the team's colour (text colour chosen for contrast) rather than hotlinked logos.
+
+## Deployment
+
+| Part | Host | Deploys when |
+| :--- | :--- | :--- |
+| API | Google Cloud Run (`us-east1`), image in Artifact Registry | Anything the image is built from changes on `main` (code, data, models), a game refresh publishes, or by hand (`deploy-api.yml`) |
+| Website | Vercel (Hobby) | `frontend/` changes (`vercel.json` skips other commits) |
+
+- **No stored keys.** GitHub Actions signs in to Google Cloud through Workload Identity Federation. The provider trusts tokens only from this repository's `main` branch. The deployer service account can deploy Cloud Run services and push to the one image repository. The API runs as a separate service account with no roles.
+- **Costs bounded.** The service scales to zero when idle and to at most two instances (1 vCPU, 512 MB, startup CPU boost). Artifact Registry keeps the five newest images. Normal traffic stays inside the free tiers.
+- **Smoke-tested.** Each deploy checks `/api/v1/health` on the new revision and links the API docs in the run summary.
+- **Data freshness.** A refresh redeploys the API within minutes. The website's cached API responses last up to an hour, as locally.
+- **Player photos.** `next/image` uses a custom loader (`src/lib/image-loader.ts`): the CDN publishes every headshot at 260×190 and 1040×760, so the browser fetches the smaller one when it's enough (avatars) and the larger otherwise (profiles), straight from NBA.com. No image optimizer is involved, so there's no quota to meter and no server-to-CDN request to be refused. The CDN does refuse headless browsers, so in the end-to-end tests the avatars fall back to initials; the tests check which headshot is requested instead.
+- **One-time setup.** `scripts/setup-gcp.sh`, run in Cloud Shell, creates the image repository and its cleanup policy, both service accounts and their roles, and the Workload Identity pool and provider, then prints the GitHub repository variables (`GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`, `GCP_RUNTIME_SA`). Until they exist, the deploy workflow skips itself.
 
 ## Testing and CI
 

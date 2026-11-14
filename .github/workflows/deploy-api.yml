@@ -1,0 +1,105 @@
+name: deploy api
+
+# Builds the API image, which bakes in the serving database built from the committed data, pushes it to
+# Artifact Registry and deploys it to Cloud Run. Runs when anything the image is built from changes on
+# main, after the injury-report refresh publishes (refresh-games.yml calls it), or by hand.
+#
+# GitHub signs in to Google Cloud with Workload Identity Federation: no service account keys are stored.
+# The one-time setup (scripts/setup-gcp.sh) prints the repository variables this needs:
+#   GCP_PROJECT_ID, GCP_REGION, GCP_WIF_PROVIDER, GCP_DEPLOY_SA, GCP_RUNTIME_SA
+# and optionally WEB_ORIGIN (the website's address, allowed by CORS). Until they're set, it does nothing.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/app/**
+      - backend/Dockerfile
+      - backend/requirements.txt
+      - config/**
+      - data/**
+      - saved_models/**
+      - src/**
+      - requirements.txt
+      - .github/workflows/deploy-api.yml
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+# Deploys run one at a time, in order; the last one leaves the newest data live.
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  SERVICE: nba-api
+  IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/nba-analytics/api
+
+jobs:
+  deploy:
+    name: Deploy the API to Cloud Run
+    if: vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # A push deploys its own commit. Called after a refresh (or by hand), deploy main as it is now,
+      # which includes the commit the refresh just pushed.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
+
+      - name: Tag the image with the commit it's built from
+        run: echo "TAG=$IMAGE:$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+          token_format: access_token
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Build and push the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          provenance: false
+          tags: ${{ env.TAG }}
+          # Dependencies stay cached between runs; only the data layers rebuild after a refresh.
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      # Scales to zero when idle (free tier); at most two instances, so a traffic spike can't run up a bill.
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --project="${{ vars.GCP_PROJECT_ID }}" \
+            --region="${{ vars.GCP_REGION }}" \
+            --image="$TAG" \
+            --service-account="${{ vars.GCP_RUNTIME_SA }}" \
+            --allow-unauthenticated \
+            --cpu=1 --memory=512Mi --cpu-boost \
+            --min-instances=0 --max-instances=2 \
+            --set-env-vars="NBA_CACHE_MAX_AGE=3600,NBA_ALLOWED_ORIGINS=${{ vars.WEB_ORIGIN || 'http://localhost:3000' }}" \
+            --quiet
+
+      - name: Smoke test
+        run: |
+          url=$(gcloud run services describe "$SERVICE" --project="${{ vars.GCP_PROJECT_ID }}" \
+            --region="${{ vars.GCP_REGION }}" --format='value(status.url)')
+          curl -sf --retry 3 --retry-all-errors "$url/api/v1/health"
+          echo "Deployed: $url ([API docs]($url/docs))" >> "$GITHUB_STEP_SUMMARY"
